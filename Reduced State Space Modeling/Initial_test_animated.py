@@ -6,32 +6,42 @@ from matplotlib.patches import Circle
 
 # Define the dynamics function for the system
 def dynamics(state, t, mu, chi, psi):
-    x_P, x_E, y_E = state
-    
+    x_P, x_E = state
+    y_E = np.sqrt(1-(x_P-x_E)**2)
     # Unpack angles
-    cos_chi = np.cos(chi) # (Original)
-    # cos_chi = -(x_P-x_E) # Enforcing PP
-    sin_chi = np.sin(chi) # (Original)
-    # sin_chi = np.sqrt(1-(x_P-x_E)**2) # Enforcing PP
+    #cos_chi = np.cos(chi) # (Original)
+    cos_chi = -(x_P-x_E) # Enforcing PP
+    #sin_chi = np.sin(chi) # (Original)
+    sin_chi = np.sqrt(1-(x_P-x_E)**2) # Enforcing PP
+
+    '''
+    alterantive way of finding PP
+    chi = np.arccos(cos_chi)
+    alpha = np.arccos(1/mu)
+    psi = chi - alpha    
+    '''
+
     cos_psi = np.cos(psi)  # (Original)
     sin_psi = np.sin(psi)  # (Original)
-
+    
     # Define the dynamics equations
     dx_P = 0.5 * (cos_chi - cos_psi)
     dx_E = mu * np.cos(phi) - 0.5 * (cos_chi + cos_psi) + 0.5 * (y_E / x_P) * (sin_chi - sin_psi)
-    dy_E = mu * np.sin(phi) - 0.5 * (sin_chi + sin_psi) - 0.5 * (x_E / x_P) * (sin_chi - sin_psi)
+    # dy_E = mu * np.sin(phi) - 0.5 * (sin_chi + sin_psi) - 0.5 * (x_E / x_P) * (sin_chi - sin_psi) Removed since assumption is its in contact with P_1
 
-    return [dx_P, dx_E, dy_E]
+    return [dx_P, dx_E]
 
 # Set initial conditions and parameters
 V_P = 1.0            # Velocity of pursuers
-V_E = np.sqrt(2)           # Velocity of evader
+V_E = np.sqrt(2)     # Velocity of evader
 chi = np.pi*3/4      # Angle chi P1 Heading
-psi = np.pi/4       # Angle psi P2 heading
-phi = 2*np.pi/6     # Angle phi Evader Heading
+psi = np.pi/4        # Angle psi P2 heading
+phi = 2*np.pi/6      # Angle phi Evader Heading
 mu = V_E/V_P
 
-initial_state = [2, 0, 1]  # Initial state [x_P, x_E, y_E]
+initial_state = [0.5, 0]  # Initial state [x_P, x_E, y_E] , y_E is calculated from sqrt(1-(x_P-x_E)^2)
+#initial_state[2] =  np.sqrt(1-(initial_state[0]-initial_state[1])**2)
+
 t = np.linspace(0, 10, 100)  # Time vector
 
 # Solve the differential equations
@@ -40,10 +50,15 @@ sol = odeint(dynamics, initial_state, t, args=(mu, chi, psi))
 # Extract the results
 x_P1 = sol[:, 0]
 x_E = sol[:, 1]
-y_E = sol[:, 2]
+y_E = np.sqrt(1-(x_P1-x_E)**2)
 x_P2 = -1 * x_P1
 y_P2 = np.zeros(len(t))
 y_P1 = np.zeros(len(t))
+
+z = x_P1 - x_E
+plt.figure()
+plt.plot(z,x_P1)
+plt.savefig('Barrier_Curve.pdf')
 
 # Set up the figure and axis
 fig, ax = plt.subplots()

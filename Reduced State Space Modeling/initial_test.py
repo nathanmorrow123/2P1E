@@ -25,13 +25,15 @@ def dynamics(state, t, mu, chi, psi):
 
 # Set initial conditions and parameters
 V_P = 1.0            # Velocity of pursuers
-V_E = np.sqrt(2)           # Velocity of evader
+V_E = np.sqrt(2)     # Velocity of evader
 chi = np.pi*3/4      # Angle chi P1 Heading
-psi = np.pi/4       # Angle psi P2 heading
-phi = 2*np.pi/6     # Angle phi Evader Heading
+psi = np.pi/4        # Angle psi P2 heading
+phi = 2*np.pi/6      # Angle phi Evader Heading
 mu = V_E/V_P
 
-initial_state = [2, 0, 1]  # Initial state [x_P, x_E, y_E]
+initial_state = [0.5, 0, 0]  # Initial state [x_P, x_E, y_E] , y_E is calculated from sqrt(1-(x_P-x_E)^2)
+initial_state[2] =  np.sqrt(1-(initial_state[0]-initial_state[1])**2)
+
 t = np.linspace(0, 5, 10)  # Time vector
 
 # Solve the differential equations
