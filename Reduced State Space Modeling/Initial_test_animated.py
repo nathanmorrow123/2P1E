@@ -39,10 +39,10 @@ psi = np.pi/4        # Angle psi P2 heading
 phi = 2*np.pi/6      # Angle phi Evader Heading
 mu = V_E/V_P
 
-initial_state = [0.5, 0]  # Initial state [x_P, x_E, y_E] , y_E is calculated from sqrt(1-(x_P-x_E)^2)
+initial_state = [0.99, 0]  # Initial state [x_P, x_E] , y_E is calculated from sqrt(1-(x_P-x_E)^2)
 #initial_state[2] =  np.sqrt(1-(initial_state[0]-initial_state[1])**2)
 
-t = np.linspace(0, 10, 100)  # Time vector
+t = np.linspace(0, 1, 100)  # Time vector
 
 # Solve the differential equations
 sol = odeint(dynamics, initial_state, t, args=(mu, chi, psi))
@@ -54,11 +54,6 @@ y_E = np.sqrt(1-(x_P1-x_E)**2)
 x_P2 = -1 * x_P1
 y_P2 = np.zeros(len(t))
 y_P1 = np.zeros(len(t))
-
-z = x_P1 - x_E
-plt.figure()
-plt.plot(z,x_P1)
-plt.savefig('Barrier_Curve.pdf')
 
 # Set up the figure and axis
 fig, ax = plt.subplots()
@@ -135,6 +130,6 @@ def update(frame):
     return P1, P2, E, tail_P1, tail_P2, tail_E, P1_CC, P2_CC
 
 # Create animation
-ani = FuncAnimation(fig, update, frames=len(t), interval=50, blit=True)
+ani = FuncAnimation(fig, update, frames=len(t), interval=200, blit=True)
 ani.save('ReducedStateSpace.gif')
 plt.show()

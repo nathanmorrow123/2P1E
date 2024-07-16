@@ -7,7 +7,7 @@ from matplotlib.patches import Circle
 num_pursurers = 2
 dt = 0.1  # Time step
 noise_level = 0.0001  # Noise level
-capture_radius = 0.5  # Radius within which the evader is considered captured
+capture_radius = 1  # Radius within which the evader is considered captured
 trail_length = 10  # Length of the ship trails (number of previous positions to show)
 v_E = np.sqrt(2)
 v_P = 1
