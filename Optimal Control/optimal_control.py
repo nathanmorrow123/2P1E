@@ -6,7 +6,7 @@ mu = np.sqrt(2)  # (V_e / V_p)
 T = 5  # Total time
 dt = 0.01  # Time step
 n_steps = int(T / np.abs(dt))
-n_lines = 3
+n_lines = 7
 
 # Initial conditions for reduced state space variables
 x_p0 = np.linspace(np.sqrt((mu**2 - 1) / mu), 1, n_lines, endpoint=False)
@@ -48,6 +48,12 @@ for i in range(len(x_p0)):
         lambda_x_p += lambda_x_p_dot * dt
         lambda_z += lambda_z_dot * dt
 
+x_p_arr = np.array(x_p_arr)
+z_arr = np.array(z_arr)
+#Cleaning Arrays
+x_p_arr = x_p_arr[~np.isnan(x_p_arr)]
+z_arr = z_arr[~np.isnan(z_arr)]
+
 # Finite boundary lines
 x0 = np.sqrt(mu**2 - 1) / mu  # Initial x value
 z0 = np.sqrt(mu**2 - 1) / mu  # Initial z value
@@ -58,7 +64,7 @@ z2 = np.linspace(z0, 1, 50)
 x3 = np.linspace(1, 1.454, 50)
 z3 = np.ones(50)
 
-def add_arrow(line, position=None, direction='right', size=15, color=None):
+def add_arrow(line, position=None, direction='right', size=35, color=None):
     """
     Add an arrow to a line.
 
@@ -72,7 +78,7 @@ def add_arrow(line, position=None, direction='right', size=15, color=None):
     color = line.get_color()
     xdata = line.get_xdata()
     ydata = line.get_ydata()
-    
+    print(color,xdata,ydata)
     if position is None:
         position = ydata.mean()
     
@@ -93,19 +99,20 @@ def add_arrow(line, position=None, direction='right', size=15, color=None):
 
 # Plotting the results
 plt.rcParams["font.family"] = "Times New Roman"
+plt.style.use('dark_background')
 plt.set_cmap('cool')
 for i in range(n_lines):
     line = plt.plot(x_p_arr[:, i], z_arr[:, i])
     add_arrow(line, direction='left')
-plt.plot(x1, z1, color='black')
-plt.plot(x2, z2, color='black')
-plt.plot(x3, z3, color='black')
+plt.plot(x1, z1, color='white')
+plt.plot(x2, z2, color='white')
+plt.plot(x3, z3, color='white')
 plt.xticks([0, 1 / np.sqrt(2), 1, 1.454])
 plt.yticks([0, 1 / np.sqrt(2), 1])
 plt.axis('equal')
 plt.xlabel('$x_p$')
 plt.ylabel('$z$')
 plt.title('Optimal Control Flow Field')
-plt.grid()
+plt.grid(alpha=0.3)
 plt.savefig('Optimal_Control_Flow_Field.pdf')
 plt.show()

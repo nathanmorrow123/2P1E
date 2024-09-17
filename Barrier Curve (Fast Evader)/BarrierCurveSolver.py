@@ -113,14 +113,12 @@ plt.rcParams["font.family"] = "Times New Roman"
 plt.set_cmap('cool')
 line = plt.plot(x, z, label='Numerical Solution (RK4)')
 add_arrow(line, direction='left')
-
 for i in [0,1,2]:
     line = plt.plot(x_elip[i],z_elip[i], label = f'Circular arc with $x_0$  = {np.round(x0_arr[i],4)}')
     add_arrow(line)
 plt.plot(x1,z1, color = 'black')
 plt.plot(x2,z2, color = 'black')
 plt.plot(x3,z3, color = 'black')
-
 plt.xlabel('$x_P$')
 plt.xticks([0,1/np.sqrt(2),1, x[-1]])
 plt.yticks([0,1/np.sqrt(2),1])

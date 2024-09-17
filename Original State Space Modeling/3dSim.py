@@ -4,7 +4,7 @@ import matplotlib.animation as animation
 from mpl_toolkits.mplot3d import Axes3D
 from mpl_toolkits.mplot3d import art3d
 # Parameters
-num_cutters = 2
+num_cutters = 3
 dt = 0.1  # Time step
 noise_level = 0.001  # Noise level
 capture_radius = 0.5  # Radius within which the evader is considered captured
