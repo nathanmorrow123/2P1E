@@ -12,20 +12,22 @@ def quartic_coeffs(x_P, x_E, y_E):
     
     return [a4, a3, a2, a1, a0]
 
-# Function to solve quartic equation for a given x_P and x_E, scanning y_E
 def solve_quartic(x_P, x_E):
-    y_values = np.linspace(0.0, 1, 100)  # Scan y_E from 0.01 to 0.99
-    max_y_E = None  # To store the highest y_E with positive real roots
+    y_values = np.linspace(0.0, 1, 10)  # Scan y_E from 0.0 to 1.0
+    max_y_E = -np.inf  # Initialize with negative infinity
     print("Solving for y_E of : ")
     for y_E in y_values:
         print(f'y_E: {y_E}')
         coeffs = quartic_coeffs(x_P, x_E, y_E)
         roots = np.roots(coeffs)
-        real_roots = [r.real for r in roots if np.isreal(r) and r.real >= 0]  # Only positive real roots
+        print(f'Found Roots: {roots} ')
+        real_roots = [r for r in roots if np.isreal(r) and r >= 0]  # Only positive real roots
         print(f'Found soln: {real_roots}')
-        if real_roots:
-            max_y_E = y_E  # Update max y_E whenever we find valid real roots
+        if real_roots and y_E > max_y_E:  # Use '>' for proper comparison
+            max_y_E = y_E  # Update max_y_E when a valid solution is found
     
+    if max_y_E == -np.inf:
+        return None  # If no valid y_E was found, return None
     return max_y_E  # Return the highest y_E with real roots
 
 # Example parameters
