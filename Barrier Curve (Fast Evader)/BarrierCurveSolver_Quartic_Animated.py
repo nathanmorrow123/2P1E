@@ -13,7 +13,7 @@ def quartic_coeffs(x_P, x_E, y_E):
 
 # Function to solve the quartic equation for a given x_P and x_E, scanning y_E
 def solve_quartic(x_P, x_E):
-    y_values = np.linspace(0.0, x_P, 100)  # Scan y_E from 0.0 to 1.0
+    y_values = np.linspace(0.0, 1, 100)  # Scan y_E from 0.0 to 1.0
     max_y_E = -np.inf  # Initialize with negative infinity
     for y_E in y_values:
         coeffs = quartic_coeffs(x_P, x_E, y_E)

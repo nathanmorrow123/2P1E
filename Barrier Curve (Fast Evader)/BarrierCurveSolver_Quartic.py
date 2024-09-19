@@ -1,33 +1,43 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from numpy.polynomial import Polynomial
+import decimal
 # See weburl https://www.wolframalpha.com/input?i2d=true&i=Power%5Bt%2C4%5D+-+4+Power%5Bt%2C3%5D+%2B+2+%5C%2840%291+-+Power%5BSubscript%5Bx%2C+E%5D%2C2%5D+-+3+Power%5BSubscript%5By%2C+E%5D%2C2%5D+%2B+Power%5BSubscript%5Bx%2C+P%5D%2C2%5D%5C%2841%29+Power%5Bt%2C2%5D+%2B4+%5C%2840%29Power%5BSubscript%5Bx%2C+E%5D%2C2%5D+-+Power%5BSubscript%5By%2C+E%5D%2C2%5D+-+Power%5BSubscript%5Bx%2C+P%5D%2C2%5D+%2B+1%5C%2841%29+t+%2B+Power%5B%5C%2840%29Power%5BSubscript%5Bx%2C+E%5D%2C2%5D+%2B+Power%5BSubscript%5By%2C+E%5D%2C2%5D+-+Power%5BSubscript%5Bx%2C+P%5D%2C2%5D+%2B+1%5C%2841%29%2C2%5D+%2B+4+%5C%2840%29Power%5BSubscript%5Bx%2C+P%5D%2C2%5D+-+1%5C%2841%29+Power%5BSubscript%5By%2C+E%5D%2C2%5D+%3D%3D+0%0A%0A%0A
 # Function to compute the quartic equation coefficients
-def quartic_coeffs(x_P, x_E, y_E):
-    # Coefficients of the quartic equation
-    a4 = 1  # t^4 term
-    a3 = -4  # t^3 term
-    a2 = 2 * (1 - x_E**2 - 3*y_E**2 + x_P**2)  # t^2 term
-    a1 = 4 * (x_E**2 - y_E**2 - x_P**2 + 1)  # t^1 term
-    a0 = (x_E**2 + y_E**2 - x_P**2 + 1)**2 + 4 * (x_P**2 - 1) * y_E**2  # constant term
+from mpmath import mp, polyroots
+
+# Set precision to 50 decimal places (or any desired level)
+mp.dps = 100  # decimal places of precision
+
+# Function to compute the quartic equation coefficients with mpmath
+def quartic_coeffs_mpmath(x_P, x_E, y_E):
+    x_P = mp.mpf(x_P)
+    x_E = mp.mpf(x_E)
+    y_E = mp.mpf(y_E)
+    
+    a4 = mp.mpf(1)  # t^4 term
+    a3 = mp.mpf(-4)  # t^3 term
+    a2 = 2 * (mp.mpf(1) - x_E**2 - 3*y_E**2 + x_P**2)  # t^2 term
+    a1 = 4 * (x_E**2 - y_E**2 - x_P**2 + mp.mpf(1))  # t^1 term
+    a0 = (x_E**2 + y_E**2 - x_P**2 + mp.mpf(1))**2 + 4 * (x_P**2 - mp.mpf(1)) * y_E**2  # constant term
     
     return [a4, a3, a2, a1, a0]
 
-def solve_quartic(x_P, x_E):
+# Solve the quartic using mpmath's polyroots
+def solve_quartic_mpmath(x_P, x_E):
     y_values = np.linspace(0.0, 1, 10)  # Scan y_E from 0.0 to 1.0
-    max_y_E = -np.inf  # Initialize with negative infinity
-    print("Solving for y_E of : ")
-    for y_E in y_values:
-        print(f'y_E: {y_E}')
-        coeffs = quartic_coeffs(x_P, x_E, y_E)
-        roots = np.roots(coeffs)
-        print(f'Found Roots: {roots} ')
-        real_roots = [r for r in roots if np.isreal(r) and r >= 0]  # Only positive real roots
-        print(f'Found soln: {real_roots}')
-        if real_roots and y_E > max_y_E:  # Use '>' for proper comparison
-            max_y_E = y_E  # Update max_y_E when a valid solution is found
+    max_y_E = mp.ninf  # Initialize with negative infinity
     
-    if max_y_E == -np.inf:
-        return None  # If no valid y_E was found, return None
+    for y_E in y_values:
+        coeffs = quartic_coeffs_mpmath(x_P, x_E, y_E)
+        roots = polyroots(coeffs, maxsteps = 10000)
+        print(roots)
+        real_roots = [r for r in roots if mp.re(r) >= 0 and mp.im(r) == 0]  # Only positive real roots
+        if real_roots and mp.mpf(y_E) > max_y_E:
+            max_y_E = mp.mpf(y_E)
+    
+    if max_y_E == mp.ninf:
+        return None  # No valid y_E was found
     return max_y_E  # Return the highest y_E with real roots
 
 # Example parameters
@@ -39,7 +49,7 @@ highest_y_E_values = []
 
 for x_E in x_E_values:
     print(f'X_E: {x_E}')
-    max_y_E = solve_quartic(x_P, x_E)
+    max_y_E = solve_quartic_mpmath(x_P, x_E)
     if max_y_E is not None:
         highest_y_E_values.append(max_y_E)
     else:
