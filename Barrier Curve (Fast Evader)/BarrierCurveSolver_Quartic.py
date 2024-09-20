@@ -13,13 +13,14 @@ def quartic_coeffs(x_P, x_E, y_E):
     return [a4, a3, a2, a1, a0]
 
 def solve_quartic(x_P, x_E):
-    y_values = np.linspace(0.0, 1, 10)  # Scan y_E from 0.0 to 1.0
+    y_values = np.linspace(0.0, 100, 1000)  # Scan y_E from 0.0 to 1.0
     max_y_E = -np.inf  # Initialize with negative infinity
     print("Solving for y_E of : ")
     for y_E in y_values:
         print(f'y_E: {y_E}')
         coeffs = quartic_coeffs(x_P, x_E, y_E)
-        roots = np.roots(coeffs)
+        p = np.polynomial.Polynomial(coeffs)
+        roots = p.roots()
         print(f'Found Roots: {roots} ')
         real_roots = [r for r in roots if np.isreal(r) and r >= 0]  # Only positive real roots
         print(f'Found soln: {real_roots}')
@@ -34,7 +35,7 @@ def solve_quartic(x_P, x_E):
 x_P = 1.2  # example value for x_P
 
 # Scan x_E from 0 to x_P
-x_E_values = np.linspace(0.0, x_P, 100)
+x_E_values = np.linspace(0.0, 0.2, 100)
 highest_y_E_values = []
 
 for x_E in x_E_values:
