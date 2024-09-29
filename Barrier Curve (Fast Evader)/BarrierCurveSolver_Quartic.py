@@ -1,6 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
+# Given a quartic equation that has the response variable t (time to capture) and factor variables of the evader position (Xe,Ye) and Pursuer position (Xp)
+# Is it possible to construct a barrier curve that describe the region of interceptability?
 # See weburl https://www.wolframalpha.com/input?i2d=true&i=Power%5Bt%2C4%5D+-+4+Power%5Bt%2C3%5D+%2B+2+%5C%2840%291+-+Power%5BSubscript%5Bx%2C+E%5D%2C2%5D+-+3+Power%5BSubscript%5By%2C+E%5D%2C2%5D+%2B+Power%5BSubscript%5Bx%2C+P%5D%2C2%5D%5C%2841%29+Power%5Bt%2C2%5D+%2B4+%5C%2840%29Power%5BSubscript%5Bx%2C+E%5D%2C2%5D+-+Power%5BSubscript%5By%2C+E%5D%2C2%5D+-+Power%5BSubscript%5Bx%2C+P%5D%2C2%5D+%2B+1%5C%2841%29+t+%2B+Power%5B%5C%2840%29Power%5BSubscript%5Bx%2C+E%5D%2C2%5D+%2B+Power%5BSubscript%5By%2C+E%5D%2C2%5D+-+Power%5BSubscript%5Bx%2C+P%5D%2C2%5D+%2B+1%5C%2841%29%2C2%5D+%2B+4+%5C%2840%29Power%5BSubscript%5Bx%2C+P%5D%2C2%5D+-+1%5C%2841%29+Power%5BSubscript%5By%2C+E%5D%2C2%5D+%3D%3D+0%0A%0A%0A
+
 # Function to compute the quartic equation coefficients
 def quartic_coeffs(x_P, x_E, y_E):
     # Coefficients of the quartic equation
@@ -10,23 +13,37 @@ def quartic_coeffs(x_P, x_E, y_E):
     a1 = 4 * (x_E**2 - y_E**2 - x_P**2 + 1)  # t^1 term
     a0 = (x_E**2 + y_E**2 - x_P**2 + 1)**2 + 4 * (x_P**2 - 1) * y_E**2  # constant term
     
-    return [a4, a3, a2, a1, a0]
+    return [a0, a1, a2, a3, a4]
 
 def solve_quartic(x_P, x_E):
-    y_values = np.linspace(0.0, 100, 1000)  # Scan y_E from 0.0 to 1.0
+    '''
+    The Purpose of this method is to sift through the evader y position from zero to the maximum possible intercept point
+    assuming a real root of the quartic polynomial is a viable time to capture.
+    '''
+
+    y_values = np.linspace(0.0, 1, 1000)  # Scan y_E from 0.0 to 1.0
     max_y_E = -np.inf  # Initialize with negative infinity
     print("Solving for y_E of : ")
     for y_E in y_values:
         print(f'y_E: {y_E}')
         coeffs = quartic_coeffs(x_P, x_E, y_E)
         p = np.polynomial.Polynomial(coeffs)
+        #print(p)
+        #pDeriv = p.deriv(1)
+        #print(pDeriv)
+        #timeTemp = np.linspace(-5,5,100)
+        #plt.figure()
+        #plt.plot(timeTemp,p(timeTemp))
+        #plt.grid(True)
+        #plt.savefig(f'QuarticPlots\QuarticPlot{x_P,x_E,y_E}.png', dpi = 50)
+        #print(f'Deriv Roots @: {pDeriv.roots()}')
         roots = p.roots()
         print(f'Found Roots: {roots} ')
-        real_roots = [r for r in roots if np.isreal(r) and r >= 0]  # Only positive real roots
+        real_roots = [r for r in roots if np.isreal(r) and np.real(r) >= 0 and np.imag(r) == 0 and np.isclose(p(r), 0) ]  # Only positive real roots with no 0.j
         print(f'Found soln: {real_roots}')
-        if real_roots and y_E > max_y_E:  # Use '>' for proper comparison
+        if len(real_roots) == 4 and y_E > max_y_E:  # Use '>' for proper comparison
             max_y_E = y_E  # Update max_y_E when a valid solution is found
-    
+
     if max_y_E == -np.inf:
         return None  # If no valid y_E was found, return None
     return max_y_E  # Return the highest y_E with real roots
@@ -35,10 +52,11 @@ def solve_quartic(x_P, x_E):
 x_P = 1.2  # example value for x_P
 
 # Scan x_E from 0 to x_P
-x_E_values = np.linspace(0.0, 0.2, 100)
+x_E_values = np.linspace(0.0, x_P, 1000)
 highest_y_E_values = []
 
 for x_E in x_E_values:
+    print('*******************************************************')
     print(f'X_E: {x_E}')
     max_y_E = solve_quartic(x_P, x_E)
     if max_y_E is not None:
@@ -83,4 +101,4 @@ plt.ylabel('$y_E$')
 plt.title('Capturability Boundary with Reflections and Capture Radii of Two Pursuers')
 plt.grid(False)
 plt.gca().set_aspect('equal', adjustable='box')
-plt.show()
+plt.savefig('Test.pdf')
