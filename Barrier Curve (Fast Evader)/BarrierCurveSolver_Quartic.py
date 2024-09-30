@@ -1,8 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
-# Given a quartic equation that has the response variable t (time to capture) and factor variables of the evader position (Xe,Ye) and Pursuer position (Xp)
-# Is it possible to construct a barrier curve that describe the region of interceptability?
-# See weburl https://www.wolframalpha.com/input?i2d=true&i=Power%5Bt%2C4%5D+-+4+Power%5Bt%2C3%5D+%2B+2+%5C%2840%291+-+Power%5BSubscript%5Bx%2C+E%5D%2C2%5D+-+3+Power%5BSubscript%5By%2C+E%5D%2C2%5D+%2B+Power%5BSubscript%5Bx%2C+P%5D%2C2%5D%5C%2841%29+Power%5Bt%2C2%5D+%2B4+%5C%2840%29Power%5BSubscript%5Bx%2C+E%5D%2C2%5D+-+Power%5BSubscript%5By%2C+E%5D%2C2%5D+-+Power%5BSubscript%5Bx%2C+P%5D%2C2%5D+%2B+1%5C%2841%29+t+%2B+Power%5B%5C%2840%29Power%5BSubscript%5Bx%2C+E%5D%2C2%5D+%2B+Power%5BSubscript%5By%2C+E%5D%2C2%5D+-+Power%5BSubscript%5Bx%2C+P%5D%2C2%5D+%2B+1%5C%2841%29%2C2%5D+%2B+4+%5C%2840%29Power%5BSubscript%5Bx%2C+P%5D%2C2%5D+-+1%5C%2841%29+Power%5BSubscript%5By%2C+E%5D%2C2%5D+%3D%3D+0%0A%0A%0A
+from multiprocessing import Pool, cpu_count
+from tqdm import tqdm
 
 # Function to compute the quartic equation coefficients
 def quartic_coeffs(x_P, x_E, y_E):
@@ -14,91 +13,106 @@ def quartic_coeffs(x_P, x_E, y_E):
     a0 = (x_E**2 + y_E**2 - x_P**2 + 1)**2 + 4 * (x_P**2 - 1) * y_E**2  # constant term
     
     return [a0, a1, a2, a3, a4]
-
-def solve_quartic(x_P, x_E):
-    '''
-    The Purpose of this method is to sift through the evader y position from zero to the maximum possible intercept point
-    assuming a real root of the quartic polynomial is a viable time to capture.
-    '''
-
-    y_values = np.linspace(0.0, 1, 1000)  # Scan y_E from 0.0 to 1.0
+def solve_quartic(x_P, x_E, last_y_E = None):
+    
+    # Test to see if x_E is to 
+    if last_y_E != None:
+        if x_E<(x_P-1):
+            y_values = np.linspace(last_y_E, 1, 500)  # Scan y_E from last highest to 1.0 
+        else:
+            y_values = np.linspace(np.sqrt(1-(x_P-x_E)**2), 1, 1000)  # Scan y_E from -1.0 to 1.0
+    else:
+        if x_E<(x_P-1):
+            y_values = np.linspace(0, 1, 1000)  # Scan y_E from -1.0 to 1.0 
+        else:
+            y_values = np.linspace(np.sqrt(1-(x_P-x_E)**2), 1, 1000)  # Scan y_E from -1.0 to 1.0
+    
     max_y_E = -np.inf  # Initialize with negative infinity
-    print("Solving for y_E of : ")
+
     for y_E in y_values:
-        print(f'y_E: {y_E}')
         coeffs = quartic_coeffs(x_P, x_E, y_E)
         p = np.polynomial.Polynomial(coeffs)
-        #print(p)
-        #pDeriv = p.deriv(1)
-        #print(pDeriv)
-        #timeTemp = np.linspace(-5,5,100)
-        #plt.figure()
-        #plt.plot(timeTemp,p(timeTemp))
-        #plt.grid(True)
-        #plt.savefig(f'QuarticPlots\QuarticPlot{x_P,x_E,y_E}.png', dpi = 50)
-        #print(f'Deriv Roots @: {pDeriv.roots()}')
         roots = p.roots()
-        print(f'Found Roots: {roots} ')
-        real_roots = [r for r in roots if np.isreal(r) and np.real(r) >= 0 and np.imag(r) == 0 and np.isclose(p(r), 0) ]  # Only positive real roots with no 0.j
-        print(f'Found soln: {real_roots}')
-        if len(real_roots) == 4 and y_E > max_y_E:  # Use '>' for proper comparison
-            max_y_E = y_E  # Update max_y_E when a valid solution is found
+        # Only positive real roots
+        real_roots = [r for r in roots if np.isreal(r) and np.real(r) >= 0 and np.imag(r) == 0 and np.isclose(p(r), 0)]
 
+        # If there are 4 real roots, check and update max_y_E and min_y_E
+        if len(real_roots) == 4:
+            max_y_E = y_E
+        
+
+    # If no valid y_E was found, return None
     if max_y_E == -np.inf:
-        return None  # If no valid y_E was found, return None
-    return max_y_E  # Return the highest y_E with real roots
+        return None
+        
+    return max_y_E  # Return the highest y_E values with real roots
 
-# Example parameters
-x_P = 1.2  # example value for x_P
+# Function to compute and plot the barrier curve for each x_P
+def plot_barrier_curve(x_P):
+    x_E_values = np.linspace(0, x_P, 500)
+    highest_y_E_values = []
+    max_y_E = None
+    for x_E in x_E_values:
+        
+        max_y_E = solve_quartic(x_P, x_E, max_y_E)
+        
+        if max_y_E is not None:
+            highest_y_E_values.append(max_y_E)
+        else:
+            highest_y_E_values.append(np.nan)  # In case no real roots are found
 
-# Scan x_E from 0 to x_P
-x_E_values = np.linspace(0.0, x_P, 1000)
-highest_y_E_values = []
+    # Now plot the highest y_E for each x_E
+    plt.figure(figsize=(10, 10))
 
-for x_E in x_E_values:
-    print('*******************************************************')
-    print(f'X_E: {x_E}')
-    max_y_E = solve_quartic(x_P, x_E)
-    if max_y_E is not None:
-        highest_y_E_values.append(max_y_E)
-    else:
-        highest_y_E_values.append(np.nan)  # In case no real roots are found
+    highest_y_E_values = np.array(highest_y_E_values) # for the mirroring
+    # Plot the original curve
+    plt.scatter(x_E_values, highest_y_E_values, s=2, color='red') # 1st Quadrant
+    plt.scatter(-1*x_E_values,highest_y_E_values, s=2, color = 'red') # 2nd Quadrant Mirror
+    plt.scatter(-1*x_E_values,-1*highest_y_E_values, s=2, color = 'red') # 3rd Quadrant Mirror
+    plt.scatter(x_E_values, -1*highest_y_E_values, s=2, color = 'red') # 4th Quadrant Mirror
 
-# Now plot the highest y_E for each x_E
-plt.figure(figsize=(10, 10))
+    # Plot the first pursuer's position at (x_P, 0)
+    plt.scatter([x_P], [0], color='blue')
 
-# Plot the original curve
-plt.scatter(x_E_values, highest_y_E_values,s = 5, color='red' )
+    # Draw the capture radius for the first pursuer at (x_P, 0)
+    capture_radius_1 = plt.Circle((x_P, 0), 1, color='blue', fill=False)
+    plt.gca().add_patch(capture_radius_1)
 
-# Mirror across the y-axis (multiply x_E by -1)
-plt.scatter(-x_E_values, highest_y_E_values,s = 5, color='red')
+    # Plot the second pursuer's position at (-x_P, 0)
+    plt.scatter([-x_P], [0], color='blue')
 
-# Mirror across the x-axis (multiply y_E by -1)
-plt.scatter(x_E_values, -np.array(highest_y_E_values), s = 5,color='red')
+    # Draw the capture radius for the second pursuer at (-x_P, 0)
+    capture_radius_2 = plt.Circle((-x_P, 0), 1, color='blue', fill=False)
+    plt.gca().add_patch(capture_radius_2)
 
-# Mirror across both x and y axes (multiply both x_E and y_E by -1)
-plt.scatter(-x_E_values, -np.array(highest_y_E_values), s = 5,color='red')
+    # Plot settings
+    plt.axhline(0, color='black', linewidth=1)
+    plt.axvline(0, color='black', linewidth=1)
+    plt.xlabel('$x_E$')
+    plt.ylabel('$y_E$')
+    plt.title(f'Barrier Curve 2P1E for x_P = {x_P:.2f}')
+    plt.grid(True)
+    plt.gca().set_aspect('equal', adjustable='box')
 
-# Plot the first pursuer's position at (x_P, 0)
-plt.scatter([x_P], [0], color='blue')
+    # Save the plot with a unique filename based on x_P
+    filename = f'Barrier_Curve_xP_{x_P:.3f}.pdf'
+    plt.savefig(filename)
+    plt.close()  # Close the figure to avoid memory issues
 
-# Draw the capture radius for the first pursuer at (x_P, 0)
-capture_radius_1 = plt.Circle((x_P, 0), 1, color='blue', fill = False)
-plt.gca().add_patch(capture_radius_1)
+    return f"Plot saved: {filename}"
 
-# Plot the second pursuer's position at (-x_P, 0)
-plt.scatter([-x_P], [0], color='blue')
+# Main function to parallelize the process
+def main():
+    x_P_values = np.linspace(1, 1.4, 100)  
 
-# Draw the capture radius for the second pursuer at (-x_P, 0)
-capture_radius_2 = plt.Circle((-x_P, 0), 1, color='blue', fill=False )
-plt.gca().add_patch(capture_radius_2)
+    # Create a pool of workers (use the number of CPUs available)
+    with Pool(processes=cpu_count()) as pool:
+        # Use tqdm to show progress bar for the pool execution
+        results = list(tqdm(pool.imap(plot_barrier_curve, x_P_values), total=len(x_P_values)))
 
-# Plot settings
-plt.axhline(0, color='black',linewidth=1)
-plt.axvline(0, color='black',linewidth=1)
-plt.xlabel('$x_E$')
-plt.ylabel('$y_E$')
-plt.title('Capturability Boundary with Reflections and Capture Radii of Two Pursuers')
-plt.grid(False)
-plt.gca().set_aspect('equal', adjustable='box')
-plt.savefig('Test.pdf')
+    # Print the results (plot filenames) for each x_P
+    for res in results:
+        print(res)
+
+if __name__ == '__main__':
+    main()
