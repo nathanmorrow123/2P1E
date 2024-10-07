@@ -4,10 +4,15 @@ from multiprocessing import Pool, cpu_count
 from tqdm import tqdm
 import os
 import matplotlib.animation as animation
+# Given a quartic equation that has the response variable t (time to capture) and factor variables of the evader position (Xe,Ye) and Pursuer position (Xp)
+# Is it possible to construct a barrier curve that describe the region of interceptability?
 
-# Function to compute the quartic equation coefficients
 def quartic_coeffs(x_P, x_E, y_E):
-    # Coefficients of the quartic equation
+    """
+    Function to compute the quartic equation coefficients
+    https://www.wolframalpha.com/input?i2d=true&i=Power%5Bt%2C4%5D+-+4+Power%5Bt%2C3%5D+%2B+2+%5C%2840%291+-+Power%5BSubscript%5Bx%2C+E%5D%2C2%5D+-+3+Power%5BSubscript%5By%2C+E%5D%2C2%5D+%2B+Power%5BSubscript%5Bx%2C+P%5D%2C2%5D%5C%2841%29+Power%5Bt%2C2%5D+%2B4+%5C%2840%29Power%5BSubscript%5Bx%2C+E%5D%2C2%5D+-+Power%5BSubscript%5By%2C+E%5D%2C2%5D+-+Power%5BSubscript%5Bx%2C+P%5D%2C2%5D+%2B+1%5C%2841%29+t+%2B+Power%5B%5C%2840%29Power%5BSubscript%5Bx%2C+E%5D%2C2%5D+%2B+Power%5BSubscript%5By%2C+E%5D%2C2%5D+-+Power%5BSubscript%5Bx%2C+P%5D%2C2%5D+%2B+1%5C%2841%29%2C2%5D+%2B+4+%5C%2840%29Power%5BSubscript%5Bx%2C+P%5D%2C2%5D+-+1%5C%2841%29+Power%5BSubscript%5By%2C+E%5D%2C2%5D+%3D%3D+0%0A%0A%0A
+    """
+
     a4 = 1  # t^4 term
     a3 = -4  # t^3 term
     a2 = 2 * (1 - x_E**2 - 3*y_E**2 + x_P**2)  # t^2 term
@@ -15,6 +20,12 @@ def quartic_coeffs(x_P, x_E, y_E):
     a0 = (x_E**2 + y_E**2 - x_P**2 + 1)**2 + 4 * (x_P**2 - 1) * y_E**2  # constant term
     
     return [a0, a1, a2, a3, a4]
+def boundryCheck(t,x_E,y_E):
+    """
+    Verify the upper limit of the Barrier
+    Using Eqn 7 from appendix A
+    https://www.wolframalpha.com/input?i2d=true&i=Power%5Bt%2C3%5D+-+3Power%5Bt%2C2%5D+%2B+%5C%2840%292.21+-+Power%5Bx%2C2%5D+-+3Power%5By%2C2%5D%5C%2841%29t+%2B+Power%5Bx%2C2%5D+-+Power%5By%2C2%5D+-+0.21+%3D+0
+    """
 
 def solve_quartic(x_P, x_E, last_y_E=None):
     if last_y_E is not None:
@@ -83,7 +94,7 @@ def plot_barrier_curve(x_P):
 
     # Save the plot with a unique filename
     filename = f'frames/frame_xP_{x_P:.3f}.png'
-    plt.savefig(filename)
+    plt.savefig(filename, dpi = 300)
     plt.close()
     
     return filename
@@ -106,7 +117,7 @@ def create_animation(image_files):
 
 # Main function to parallelize the generation of frames
 def main():
-    x_P_values = np.linspace(1, 1.5, 240)  
+    x_P_values = np.linspace(1/np.sqrt(2), 1.5, 240)  
     save_path = "frames"
     
     if not os.path.exists(save_path):
@@ -116,6 +127,10 @@ def main():
     with Pool(processes=cpu_count()) as pool:
         image_files = list(tqdm(pool.imap(plot_barrier_curve, x_P_values), total=len(x_P_values)))
 
+    while None in image_files:
+        image_files.remove(None)
+    image_files = [x for x in image_files if x is not None] # Remove nones
+    image_files.extend(image_files[::-1]) # Loop start finish together 
     # Create the animation after all frames are generated
     create_animation(image_files)
 

@@ -103,7 +103,7 @@ def plot_barrier_curve(x_P):
 
 # Main function to parallelize the process
 def main():
-    x_P_values = np.linspace(1, 1.4, 100)  
+    x_P_values = np.linspace(1/np.sqrt(2), 1.4, 5)  
 
     # Create a pool of workers (use the number of CPUs available)
     with Pool(processes=cpu_count()) as pool:
