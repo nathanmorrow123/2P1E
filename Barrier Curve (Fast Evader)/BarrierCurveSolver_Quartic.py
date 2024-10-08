@@ -132,7 +132,7 @@ def create_animation(image_files):
     ani = animation.FuncAnimation(fig, update_frame, frames=len(image_files), repeat=True)
     
     # Save the animation as mp4
-    ani.save('barrier_curve_animation.gif', dpi = 300, fps=10)
+    ani.save('barrier_curve_animation.gif', dpi = 300, fps=30)
 
 # Main function to parallelize the generation of frames
 def main():
@@ -154,6 +154,7 @@ def main():
     else:
         files = os.listdir('frames/')
         files = ['frames/' + s for s in files]
+        files.sort()
         print(files)
         create_animation(files)
     
