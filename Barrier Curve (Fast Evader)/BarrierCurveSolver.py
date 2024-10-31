@@ -2,6 +2,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Define the differential equation as a function
+# Can we develop a sub-optimal barrier for a 2P1E within the reduced statespace 
+# See https://www.wolframalpha.com/input?i2d=true&i=Divide%5B%5C%2840%292+*+sqrt%5C%2840%291+%2B+Divide%5Bsqrt%5C%2840%291+-+Power%5Bz%2C2%5D%5C%2841%29+%2Cx%5D%5C%2841%29+-+z+*+%5C%2840%292+%2B+Divide%5Bsqrt%5C%2840%291+-+Power%5Bz%2C2%5D%5C%2841%29%2Cx%5D%5C%2841%29%5C%2841%29%2Csqrt%5C%2840%291+-+Power%5Bz%2C2%5D%5C%2841%29%0D%0A%5D+
+
 def dz_dx(x, z):
     return (2 * np.sqrt(1 + np.sqrt(1 - z**2) / x) - z * (2 + np.sqrt(1 - z**2) / x)) / np.sqrt(1 - z**2)
 
@@ -114,7 +117,7 @@ plt.set_cmap('cool')
 line = plt.plot(x, z, label='Numerical Solution (RK4)')
 add_arrow(line, direction='left')
 for i in [0,1,2]:
-    line = plt.plot(x_elip[i],z_elip[i], label = f'Circular arc with $x_0$  = {np.round(x0_arr[i],4)}')
+    line = plt.plot(x_elip[i],z_elip[i], label = f'Eliptical arc with $x_0$  = {np.round(x0_arr[i],4)}')
     add_arrow(line)
 plt.plot(x1,z1, color = 'black')
 plt.plot(x2,z2, color = 'black')

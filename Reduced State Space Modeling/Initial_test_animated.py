@@ -3,11 +3,16 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from scipy.integrate import odeint
 from matplotlib.patches import Circle
-
+import matplotlib
+matplotlib.use('Agg')  
 # Define the dynamics function for the system
 def dynamics(state, t, mu, chi, psi):
+    print(state)
     x_P, x_E = state
-    y_E = np.sqrt(1-(x_P-x_E)**2)
+    if(1-(x_P-x_E)**2 < 0):
+        return[0,0]
+    else:
+        y_E = np.sqrt(1-(x_P-x_E)**2)
     # Unpack angles
     #cos_chi = np.cos(chi) # (Original)
     cos_chi = -(x_P-x_E) # Enforcing PP
