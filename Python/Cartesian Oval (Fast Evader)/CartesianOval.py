@@ -51,7 +51,7 @@ def main():
     #plt.legend()
     plt.grid(True, alpha = 0.3)
     plt.set_cmap('hot')
-    plt.savefig('CO_2P1E_XE_ITER.png',dpi=600)
+    plt.savefig('Results/CO_2P1E_XE_ITER.png',dpi=600)
     plt.show()
 
 if __name__ == "__main__":

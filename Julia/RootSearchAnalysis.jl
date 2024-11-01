@@ -1,6 +1,5 @@
 using Roots
-using Plots
-
+using PlotlyJS
 function quartic(x_E::Float64, y_E::Float64)
     x_P = 1.1
 
@@ -18,8 +17,7 @@ function quartic(x_E::Float64, y_E::Float64)
     roots = find_zeros(poly_func, 0, 10)  # Adjust range as needed
 
     # Return roots if found; otherwise return nothing
-    return  isempty(roots) ? nothing : minimum(roots)
-
+    return isempty(roots) ? nothing : minimum(roots)
 end
 
 function compute_roots(x_E::Float64, y_E::Float64)
@@ -43,8 +41,8 @@ function compute_roots(x_E::Float64, y_E::Float64)
 end
 
 # Define the range for x_E and y_E
-x_E_range = range(0.0, stop=1.1, length=20)
-y_E_range = range(0.0, stop=1.0, length=20)
+x_E_range = range(0.0, stop=3.0, length=100)
+y_E_range = range(0.0, stop=3.0, length=100)
 
 # Dictionary to store the largest y_E for each x_E
 largest_y_E_for_positive_root = Dict{Float64, Float64}()
@@ -109,6 +107,19 @@ x_vals = vcat(x_vals, x_vals_copy)
 y_vals = vcat(y_vals, mirror_y_vals)
 z_vals = vcat(z_vals, z_vals_copy)  # Keep z_vals the same for mirrored y
 
-display(scatter3d(x_vals,y_vals,z_vals))
-
-
+plt = plot(scatter(
+    x=x_vals,
+    y=y_vals,
+    z=z_vals,
+    mode="markers",
+    marker=attr(
+        size=12,
+        color=z_vals,                # set color to an array/list of desired values
+        colorscale="Viridis",   # choose a colorscale
+        opacity=0.8
+    ),
+    type="scatter3d"
+), Layout(margin=attr(l=0, r=0, b=0, t=0)))
+display(plt)  # Display the plot
+readline()
+savefig(plt,"Results/surface.pdf")

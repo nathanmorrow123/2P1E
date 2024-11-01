@@ -130,6 +130,6 @@ plt.ylabel('$z$')
 plt.title('Sub-Optimal Flow Field, $\mu = \sqrt{2}$')
 plt.legend()
 plt.grid(True)
-plt.savefig('Barrier_Curve.pdf')
+plt.savefig('Results/Barrier_Curve.pdf')
 plt.show()
 

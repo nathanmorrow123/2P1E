@@ -77,6 +77,6 @@ def animate(i):
 anim = FuncAnimation(fig, animate, frames=len(t_values), interval=10, blit=True)
 
 # Save the animation as a GIF
-anim.save('cartesian_oval_animation_with_trail.gif', writer=PillowWriter(fps=30))
+anim.save('Results/cartesian_oval_animation_with_trail.gif', writer=PillowWriter(fps=30))
 
 plt.show()

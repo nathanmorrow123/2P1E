@@ -92,6 +92,6 @@ plt.ylabel('Y')
 plt.title('Interception Point Animation for Evader and Pursuer Problem with Capture Radius')
 
 # Save the animation as a video file
-ani.save('interception_animation_quiver.mp4', fps=10, extra_args=['-vcodec', 'libx264'])
+ani.save('Results/interception_animation_quiver.mp4', fps=10, extra_args=['-vcodec', 'libx264'])
 
 plt.show()
