@@ -61,7 +61,7 @@ function mirrorData(x_vals,y_vals,z_vals)
 end
 
 # Define the range for x_E and y_E
-x_P = 1.1
+x_P = 1.2
 x_E_range = range(0.0, stop=x_P, length=1000)
 y_E_range = range(0.0, stop=1.0, length=1000)
 
