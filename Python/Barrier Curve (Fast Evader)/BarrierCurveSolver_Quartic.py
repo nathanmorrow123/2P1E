@@ -20,6 +20,7 @@ def quartic_coeffs(x_P, x_E, y_E):
     a0 = (x_E**2 + y_E**2 - x_P**2 + 1)**2 + 4 * (x_P**2 - 1) * y_E**2  # constant term
     
     return [a0, a1, a2, a3, a4]
+
 def boundryCheck(t,x_E,y_E):
     """
     Verify the upper limit of the Barrier
@@ -42,7 +43,7 @@ def solve_quartic(x_P, x_E, last_y_E=None):
             y_values = np.linspace(np.sqrt(1 - (x_P - x_E)**2), 1, 1000)  # Scan y_E from -1.0 to 1.0
     else:
         if x_E < (x_P - 1):
-            y_values = np.linspace(0, 1, 10)  # Scan y_E from -1.0 to 1.0 
+            y_values = np.linspace(0, 1, 1000)  # Scan y_E from -1.0 to 1.0 
         else:
             y_values = np.linspace(np.sqrt(1 - (x_P - x_E)**2), 1, 1000)  # Scan y_E from -1.0 to 1.0
     
@@ -64,7 +65,7 @@ def solve_quartic(x_P, x_E, last_y_E=None):
 
 # Function to compute and plot the barrier curve for each x_P
 def plot_barrier_curve(x_P):
-    x_E_values = np.linspace(0,x_P,500)
+    x_E_values = np.linspace(0,x_P,1000)
     highest_y_E_values = []
     test_vals = []
     max_y_E = None
@@ -80,13 +81,17 @@ def plot_barrier_curve(x_P):
     plt.figure(figsize=(10, 10))
     highest_y_E_values = np.array(highest_y_E_values) # For mirroring
     test_vals = np.array(test_vals)
+    
     # Plot the original curve
     plt.scatter(x_E_values, highest_y_E_values, s=2, color='red')
     plt.scatter(-x_E_values, highest_y_E_values, s=2, color='red')
     plt.scatter(-x_E_values, -highest_y_E_values, s=2, color='red')
     plt.scatter(x_E_values, -highest_y_E_values, s=2, color='red')
-    plt.scatter(x_E_values, test_vals, s = 2, color = 'blue' )
-    plt.scatter(-x_E_values, test_vals, s = 2, color = 'blue')
+    
+    # Plot test values (Currently not worth it)
+    #plt.scatter(x_E_values, test_vals, s = 2, color = 'blue' )
+    #plt.scatter(-x_E_values, test_vals, s = 2, color = 'blue')
+
     plt.scatter([x_P], [0], color='blue')
     capture_radius_1 = plt.Circle((x_P, 0), 1, color='blue', fill=False)
     plt.gca().add_patch(capture_radius_1)
@@ -105,7 +110,7 @@ def plot_barrier_curve(x_P):
 
     # Save the plot with a unique filename
     filename = f'frames/frame_xP_{x_P:.4f}.png'
-    plt.savefig(filename, dpi = 300)
+    plt.savefig(filename, dpi = 300, bbox_inches='tight')
     plt.close()
     
     return filename
@@ -134,13 +139,26 @@ def create_animation(image_files):
     # Save the animation as mp4
     ani.save('Results/barrier_curve_animation.gif', dpi = 300, fps=30)
 
+def create_collage(image_files):
+    fig, axs = plt.subplots(3, 2, figsize=(22, 17))
+    axs = axs.flatten()
+
+    for ax, img_file in zip(axs, image_files):
+        img = plt.imread(img_file)
+        ax.imshow(img)
+        ax.axis('off')
+
+    plt.tight_layout()
+    plt.savefig('Results/Barrier_Curve_Quartic_Collage.pdf', dpi=300, bbox_inches = 'tight')
+    plt.close()
+
 # Main function to parallelize the generation of frames
 def main():
 
-    create_frames = False
+    create_frames = True
     if create_frames:
         x_P_values = np.linspace(1/np.sqrt(2), 1.5, 240)  
-        #x_P_values = np.array([1.1,1.2])
+        #x_P_values = np.array([0.8165, 1.0, 1.1, 1.225,np.sqrt(2), 1.45])
         save_path = "frames"
         
         if not os.path.exists(save_path):
@@ -151,13 +169,14 @@ def main():
             image_files = list(tqdm(pool.imap(plot_barrier_curve, x_P_values), total=len(x_P_values)))
         # Create the animation after all frames are generated
         create_animation(image_files)
+        #create_collage(image_files)
     else:
         files = os.listdir('frames/')
         files = ['frames/' + s for s in files]
         files.sort()
         print(files)
-        create_animation(files)
-    
+        #create_animation(files)
+        create_collage(files)
 
 if __name__ == '__main__':
     main()
