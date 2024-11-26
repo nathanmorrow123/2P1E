@@ -98,6 +98,14 @@ for (x_E, y_E, roots) in all_roots
     end
 end
 
+
+# Remove NaNs from the arrays
+valid_indices = .!isnan.(x_vals) .& .!isnan.(y_vals) .& .!isnan.(z_vals)
+x_vals = x_vals[valid_indices]
+y_vals = y_vals[valid_indices]
+z_vals = z_vals[valid_indices]
+
+
 x_vals,y_vals,z_vals = mirrorData(x_vals,y_vals,z_vals)
 
 # Plot the data points
@@ -114,6 +122,39 @@ scatter_points = scatter(
     ),
     type="scatter3d"
 )
+
+
+
+# Find the maximum and minimum values along the z-axis
+max_z = maximum(z_vals)
+min_z = minimum(z_vals)
+
+# Find the indices of the maximum and minimum values
+max_index = argmax(z_vals)
+min_index = argmin(z_vals)
+
+println(max_z," ",min_z)
+println(max_index," ",min_index)
+
+# Add annotations for the maximum and minimum points
+annotations = [
+    attr(
+        x=x_vals[max_index],
+        y=y_vals[max_index],
+        z=z_vals[max_index],
+        text="Max",
+        showarrow=true,
+        arrowhead=2
+    ),
+    attr(
+        x=x_vals[min_index],
+        y=y_vals[min_index],
+        z=z_vals[min_index],
+        text="Min",
+        showarrow=true,
+        arrowhead=2
+    )
+]
 
 # Define the height of the cylinders as the maximum of the roots array
 height = maximum(z_vals)
@@ -190,7 +231,8 @@ layout3 = Layout(
                     title="Barrier Surface"),
             title_x =0.5,
             titlefont_size="18",
-            scene_aspectratio=attr(x=2, y=1, z=0.5))
+            scene_aspectratio=attr(x=2, y=1, z=0.5),
+            annotations = annotations)
 
 plt = plot([scatter_points, cylinder1_mesh, cylinder2_mesh],layout3) 
 
