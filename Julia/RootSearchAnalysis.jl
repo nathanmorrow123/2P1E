@@ -1,8 +1,10 @@
 using PlotlyJS
 using Polynomials
 using LaTeXStrings
+using Serialization
+using Base.Threads: @threads
 
-function compute_roots(x_P::Float64, x_E::Float64, y_E::Float64)
+function compute_min_root(x_P::Float64, x_E::Float64, y_E::Float64)
     
     # Define coefficients
     a4 = 1
@@ -61,40 +63,26 @@ function mirrorData(x_vals,y_vals,z_vals)
 end
 
 # Define the range for x_E and y_E
-x_P = 1.2
-x_E_range = range(0.0, stop=x_P, length=1000)
-y_E_range = range(0.0, stop=1.0, length=1000)
+x_P = 1.1
+x_E_range = range(0.0, stop=x_P, length=100)
+y_E_range = range(0.0, stop=1.0, length=100)
 
-
-# List to store all the roots for plotting
-all_roots = []
-
-# Iterate over values of x_E
-for x_E in x_E_range
-    # For each x_E, check for the largest y_E that yields a positive real root
-    for y_E in y_E_range
-        if sqrt((x_E - x_P)^2 + y_E^2) >= 1  # Remove points within the capture circle
-            min_root = compute_roots(x_P,x_E, y_E)
-            # Check if there is at least one positive root
-            if !isnothing(min_root)
-                push!(all_roots, (x_E, y_E, min_root))  # Store the roots for plotting
-            end
-        end
-    end
-    
-end
-
-# Prepare data for 3D plotting
+# Prepare data for 3D plotting 
 x_vals = Float64[]
-y_vals = Float64[]
+y_vals = Float64[] 
 z_vals = Float64[]
 
-# Collect the roots for plotting
-for (x_E, y_E, roots) in all_roots
-    for root in roots
-        push!(x_vals, x_E)
-        push!(y_vals, y_E)
-        push!(z_vals, root)
+# Function to compute the roots and collect valid points
+@threads for x_E in x_E_range
+    for y_E in y_E_range
+        if sqrt((x_E - x_P)^2 + y_E^2) >= 1  # Remove points within the capture circle
+            min_root = compute_min_root(x_P, x_E, y_E)
+            if !isnothing(min_root)
+                push!(x_vals, x_E)
+                push!(y_vals, y_E)
+                push!(z_vals, min_root) # This case the z axis is our root axis (Time to capture)
+            end
+        end
     end
 end
 
@@ -104,7 +92,6 @@ valid_indices = .!isnan.(x_vals) .& .!isnan.(y_vals) .& .!isnan.(z_vals)
 x_vals = x_vals[valid_indices]
 y_vals = y_vals[valid_indices]
 z_vals = z_vals[valid_indices]
-
 
 x_vals,y_vals,z_vals = mirrorData(x_vals,y_vals,z_vals)
 
@@ -160,7 +147,7 @@ annotations = [
 height = maximum(z_vals)
 
 # Define capture circles for display
-θ = range(0, stop=2π, length=50)
+θ = range(0, stop=2π, length=20)
 
 # Circle 1
 circle_x1 = x_P .+ cos.(θ)
@@ -238,3 +225,12 @@ plt = plot([scatter_points, cylinder1_mesh, cylinder2_mesh],layout3)
 
 display(plt) # Display the plot
 savefig(plt, "Results/surface_with_capture_circle.pdf")
+
+# Saving the surface data into a bin file
+
+surface_data = (x_vals,y_vals,z_vals)
+
+open("Results/surface_data.bin","w") do file
+    serialize(file,surface_data)
+end
+
