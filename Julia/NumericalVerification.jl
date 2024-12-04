@@ -1,6 +1,7 @@
-using Serialization
 using LinearAlgebra
 using Plots
+using Serialization
+plotly()
 
 # Load the surface data from the binary file
 surface_data = open("Results/surface_data.bin", "r") do file
@@ -9,6 +10,53 @@ end
 
 # Extract the arrays from the loaded data
 x_vals, y_vals, z_vals = surface_data
+
+# Count the total number of lines in the surface data file
+total_lines = length(x_vals)
+println("Total number of lines in the surface data file: ", total_lines)
+
+# Filter data to match the desired density
+function filter_data(x_vals, y_vals, z_vals,desired_density)
+    filtered_x = []
+    filtered_y = []
+    filtered_z = []
+
+    unique_x_vals = unique(x_vals)
+    
+    for x in unique_x_vals
+        # Find indices of current x_val
+        indices = findall(i -> x_vals[i] == x, eachindex(x_vals))
+        current_y_vals = y_vals[indices]
+
+        # Calculate min and max of y_vals for the current x_val
+        min_y = minimum(current_y_vals)
+        max_y = maximum(current_y_vals)
+        diff_y = max_y - min_y
+        
+        # Select indices at every 10th of the y-range
+        num_y_indices = length(current_y_vals)
+        num_steps = Int(floor(num_y_indices/(desired_density*diff_y)))
+        println(num_y_indices)
+        println(num_steps)
+        if(num_y_indices!=0&&num_steps!=0)
+            selected_indices = [indices[1 + i * num_steps] for i in 0:(Int(floor(num_y_indices/num_steps))-1)]
+            # Append the selected values to filtered arrays
+            append!(filtered_x, x_vals[selected_indices])
+            append!(filtered_y, y_vals[selected_indices])
+            append!(filtered_z, z_vals[selected_indices])
+        end
+    end
+
+    return filtered_x, filtered_y, filtered_z
+end
+
+# Apply the filter
+desired_density = 25
+filtered_x_vals, filtered_y_vals, filtered_z_vals = filter_data(x_vals, y_vals, z_vals,desired_density)
+println("Total number of lines after filter: ", length(filtered_x_vals))
+
+# Extract the arrays from the loaded data
+x_vals, y_vals, z_vals = filtered_x_vals, filtered_y_vals, filtered_z_vals
 
 # Define the pursuer position and speed ratio
 x_P = 1.1  # Example value for x_P
@@ -23,6 +71,7 @@ function initial_headings(x_E, y_E, t, x_P, μ)
         y = (x_E^2 + y_E^2 - x_P^2 + 1 + 2 * t - (μ^2 - 1) * t^2) / (2 * y_E)
     end
 
+    println((x_E, y_E, t, x_P, μ))
     # Triangle one P1 - Origin - Intercept
     a = x_P  # (Origin to P1)
     b = t + 1  # (P1 to Intercept)
@@ -58,8 +107,8 @@ function initial_headings(x_E, y_E, t, x_P, μ)
 end
 
 # Function to propagate the players in time and store their trajectories
-function propagate_and_store(x_E, y_E, x_P, chi, phi, t, μ)
-    dt = 0.1
+function propagate_capture_check(x_E, y_E, x_P, chi, phi, t, μ)
+    dt = 0.0001
     capture_radius = 1.0
 
     # Initial positions
@@ -90,42 +139,40 @@ function propagate_and_store(x_E, y_E, x_P, chi, phi, t, μ)
 
         # Check for capture
         if sqrt((x_p1 - x_ev)^2 + (y_p1 - y_ev)^2) <= capture_radius || sqrt((x_p2 - x_ev)^2 + (y_p2 - y_ev)^2) <= capture_radius
+            println("Evader was captured")
             return evader_trajectory, pursuer1_trajectory, pursuer2_trajectory
         end
     end
 
+    println("Evader was not captured")
+    println("Final Distance Between Players: ")
+    println((sqrt((x_p1 - x_ev)^2 + (y_p1 - y_ev)^2),sqrt((x_p2 - x_ev)^2 + (y_p2 - y_ev)^2)))
     return evader_trajectory, pursuer1_trajectory, pursuer2_trajectory
 end
 
 # Initialize plot
-plt = plot(legend = false)
+
+plt = plot(legend = false, size=(1920,1080),template = "plotly_dark")
+
 
 # Verify intercept trajectories for all evader positions and plot trajectories
 for (x_E, y_E, t) in zip(x_vals, y_vals, z_vals)
-    angle1, angle2 = initial_headings(x_E, y_E, t, x_P, μ)
-    evader_trajectory, pursuer1_trajectory, pursuer2_trajectory = propagate_and_store(x_E, y_E, x_P, angle1, angle2, t, μ)
-
+    chi, phi = initial_headings(x_E, y_E, t, x_P, μ) # Chi is Pursuer's heading and Phi is the evader's heading
+    
+    evader_trajectory, pursuer1_trajectory, pursuer2_trajectory = propagate_capture_check(x_E, y_E, x_P, chi, phi, t, μ)
+    
     # Plot trajectories 
-    plot!(plt, [p[1] for p in evader_trajectory], [p[2] for p in evader_trajectory], arrow = true, color=:red, linewidth=1) 
+    
+    scatter!(plt, (x_E,y_E), color=:maroon, alpha = 0.1)
+    scatter!(plt, (-x_P,0), color=:darkBlue, alpha = 0.1)
+    scatter!(plt, (x_P,0), color=:darkBlue, alpha = 0.1)
+    #quiver([x_E],[y_E],[cos(phi)+x_E],[sin(phi)+y_E])
+    plot!(plt, [p[1] for p in evader_trajectory], [p[2] for p in evader_trajectory], arrow = true, color=:red, linewidth=1,) 
     plot!(plt, [p[1] for p in pursuer1_trajectory], [p[2] for p in pursuer1_trajectory], arrow = false, color=:blue, linewidth=0.1) 
     plot!(plt, [p[1] for p in pursuer2_trajectory], [p[2] for p in pursuer2_trajectory], arrow = false, color=:blue, linewidth=0.1)
-    
-    """    
-    # Add arrows at the end of the trajectories using quiver 
-    evader_end = evader_trajectory[end] 
-    pursuer1_end = pursuer1_trajectory[end] 
-    pursuer2_end = pursuer2_trajectory[end] 
-    # Calculate direction vectors for arrows 
-    evader_direction = (evader_end[1] - evader_trajectory[end-1][1], evader_end[2] - evader_trajectory[end-1][2]) 
-    pursuer1_direction = (pursuer1_end[1] - pursuer1_trajectory[end-1][1], pursuer1_end[2] - pursuer1_trajectory[end-1][2]) 
-    pursuer2_direction = (pursuer2_end[1] - pursuer2_trajectory[end-1][1], pursuer2_end[2] - pursuer2_trajectory[end-1][2]) 
-    quiver!(plt, [evader_end[1]], [evader_end[2]], quiver=([evader_direction[1]], [evader_direction[2]]), color=:red,linewidth=0.1) 
-    quiver!(plt, [pursuer1_end[1]], [pursuer1_end[2]], quiver=([pursuer1_direction[1]], [pursuer1_direction[2]]), color=:blue,linewidth=0.1) 
-    quiver!(plt, [pursuer2_end[1]], [pursuer2_end[2]], quiver=([pursuer2_direction[1]], [pursuer2_direction[2]]), color=:blue,linewidth=0.1)
-    """
-
 end
+
 
 # Show plot with all trajectories
 display(plt)
-
+savefig(plt, "Results/OptimalFlowField.pdf")

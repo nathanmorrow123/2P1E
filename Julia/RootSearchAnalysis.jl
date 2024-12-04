@@ -1,8 +1,8 @@
 using PlotlyJS
 using Polynomials
-using LaTeXStrings
 using Serialization
 using Base.Threads: @threads
+
 
 function compute_min_root(x_P::Float64, x_E::Float64, y_E::Float64)
     
@@ -26,17 +26,24 @@ function compute_min_root(x_P::Float64, x_E::Float64, y_E::Float64)
         return nothing
     else
         if length(real_positive_roots) == 4
-            return minimum(real_positive_roots)
+            sort(real_positive_roots)
+            println(real_positive_roots)
+            return real_positive_roots[2] # According to Pacther, t_2 is the optimal solution for all players, t_1 is for the evader is forced to pass between the pursuers
         else
             return nothing
         end
     end
-
 end
 
 
 function mirrorData(x_vals,y_vals,z_vals)
     
+    # Remove NaNs from the arrays
+    valid_indices = .!isnan.(x_vals) .& .!isnan.(y_vals) .& .!isnan.(z_vals)
+    x_vals = x_vals[valid_indices]
+    y_vals = y_vals[valid_indices]
+    z_vals = z_vals[valid_indices]
+
     # Mirroring the data
     mirror_x_vals = [-x for x in x_vals]
     mirror_y_vals = [-y for y in y_vals]
@@ -64,6 +71,7 @@ end
 
 # Define the range for x_E and y_E
 x_P = 1.1
+
 x_E_range = range(0.0, stop=x_P, length=100)
 y_E_range = range(0.0, stop=1.0, length=100)
 
@@ -73,7 +81,7 @@ y_vals = Float64[]
 z_vals = Float64[]
 
 # Function to compute the roots and collect valid points
-@threads for x_E in x_E_range
+@threads for x_E in reverse(x_E_range)
     for y_E in y_E_range
         if sqrt((x_E - x_P)^2 + y_E^2) >= 1  # Remove points within the capture circle
             min_root = compute_min_root(x_P, x_E, y_E)
@@ -81,20 +89,18 @@ z_vals = Float64[]
                 push!(x_vals, x_E)
                 push!(y_vals, y_E)
                 push!(z_vals, min_root) # This case the z axis is our root axis (Time to capture)
+            else 
+                y_E_range = range(start = 0,stop=y_E,length = 100)
+                break
             end
         end
     end
 end
 
 
-# Remove NaNs from the arrays
-valid_indices = .!isnan.(x_vals) .& .!isnan.(y_vals) .& .!isnan.(z_vals)
-x_vals = x_vals[valid_indices]
-y_vals = y_vals[valid_indices]
-z_vals = z_vals[valid_indices]
 
 x_vals,y_vals,z_vals = mirrorData(x_vals,y_vals,z_vals)
-
+println("Length of surface array: ",length(x_vals))
 # Plot the data points
 scatter_points = scatter(
     x=x_vals,
@@ -103,9 +109,7 @@ scatter_points = scatter(
     mode="markers",
     marker=attr(
         size=2.5,
-        color=z_vals,                # set color to an array/list of desired values
-        colorscale="Viridis",   # choose a colorscale
-        opacity=0.8
+        color=z_vals,
     ),
     type="scatter3d"
 )
@@ -144,22 +148,26 @@ annotations = [
 ]
 
 # Define the height of the cylinders as the maximum of the roots array
-height = maximum(z_vals)
+z_Ceil = maximum(z_vals)
+z_Floor = minimum(z_vals)
 
-# Define capture circles for display
-θ = range(0, stop=2π, length=20)
-
+"# Define capture circles for display Half Circles
+θ1 = range(start = pi/2, stop = 3*pi/2, length = 20)
+θ2 = range(start = pi/2, stop = -pi/2, length= 20)
+"
+θ1 = range(start = 0, stop = 2*pi, length = 60)
+θ2 = range(start = 0, stop = 2*pi, length = 60)
 # Circle 1
-circle_x1 = x_P .+ cos.(θ)
-circle_y1 = sin.(θ)
-circle_z1_bottom = zeros(length(θ))
-circle_z1_top = fill(height, length(θ))
+circle_x1 = x_P .+ cos.(θ1)
+circle_y1 = sin.(θ1)
+circle_z1_bottom = z_Floor*ones(length(θ1))
+circle_z1_top = fill(z_Ceil, length(θ1))
 
 # Circle 2
-circle_x2 = -x_P .+ cos.(θ)
-circle_y2 = sin.(θ)
-circle_z2_bottom = zeros(length(θ))
-circle_z2_top = fill(height, length(θ))
+circle_x2 = -x_P .+ cos.(θ2)
+circle_y2 = sin.(θ2)
+circle_z2_bottom = z_Floor*ones(length(θ2))
+circle_z2_top = fill(z_Ceil, length(θ2))
 
 # Function to create mesh for cylinders
 function create_cylinder_mesh(circle_x, circle_y, circle_z_bottom, circle_z_top)
@@ -195,7 +203,7 @@ cylinder1_mesh = mesh3d(
     j=faces_j1 .- 1,
     k=faces_k1 .- 1,
     color="blue",
-    opacity=0.1
+    opacity=0.3
 )
 
 cylinder2_mesh = mesh3d(
@@ -206,25 +214,31 @@ cylinder2_mesh = mesh3d(
     j=faces_j2 .- 1,
     k=faces_k2 .- 1,
     color="blue",
-    opacity=0.1
+    opacity=0.3
 )
 
 layout3 = Layout( 
-            width=1920, height=1080,
+            template = templates.plotly_dark,  
+            #width=1920, height=1080,
 			scene = attr(
-                    xaxis_title="xE",
-                    yaxis_title="yE",
-                    zaxis_title="Time to Capture",	
-                    title="Barrier Surface"),
+                    xaxis_title="X",
+                    yaxis_title="Y",
+                    zaxis_title="Time to Capture",
+                    title="2P1E Barrier Surface, μ = √2",
+                    xaxis_range = [-1,1],
+                    yaxis_range = [-1,1],
+                    zaxis_range = [z_Floor,z_Ceil+0.25]),
             title_x =0.5,
             titlefont_size="18",
-            scene_aspectratio=attr(x=2, y=1, z=0.5),
-            annotations = annotations)
+            #dpi = 300 #For saving the figure 
+            #annotations = annotations # For labeling all the minimum and maximum points (Not working)
+            )
 
-plt = plot([scatter_points, cylinder1_mesh, cylinder2_mesh],layout3) 
 
-display(plt) # Display the plot
+plt = Plot([scatter_points, cylinder1_mesh, cylinder2_mesh],layout3) 
 savefig(plt, "Results/surface_with_capture_circle.pdf")
+display(plt) # Display the plot
+
 
 # Saving the surface data into a bin file
 
