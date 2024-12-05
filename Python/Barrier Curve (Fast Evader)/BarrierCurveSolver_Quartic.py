@@ -6,7 +6,7 @@ import os
 import matplotlib.animation as animation
 # Given a quartic equation that has the response variable t (time to capture) and factor variables of the evader position (Xe,Ye) and Pursuer position (Xp)
 # Is it possible to construct a barrier curve that describe the region of interceptability?
-
+# WORKING FILE NOT READY
 def quartic_coeffs(x_P, x_E, y_E):
     """
     Function to compute the quartic equation coefficients
@@ -56,27 +56,28 @@ def solve_quartic(x_P, x_E, last_y_E=None):
         real_roots = [r for r in roots if np.isreal(r) and np.real(r) >= 0 and np.imag(r) == 0 and np.isclose(p(r), 0)]
         if len(real_roots) == 4:
             max_y_E = y_E
-            test_val = boundryCheck(np.min(real_roots),x_E,y_E)
+            root_t2 = real_roots[1]
 
     if max_y_E == -np.inf:
         return None, None
         
-    return max_y_E, test_val
+    return max_y_E, root_t2
 
 # Function to compute and plot the barrier curve for each x_P
 def plot_barrier_curve(x_P):
     x_E_values = np.linspace(0,x_P,1000)
     highest_y_E_values = []
-    test_vals = []
+    roots = []
     max_y_E = None
     for x_E in x_E_values:
-        max_y_E,test_val = solve_quartic(x_P, x_E, max_y_E)
+        max_y_E,root = solve_quartic(x_P, x_E, max_y_E)
         if max_y_E is not None:
             highest_y_E_values.append(max_y_E)
-            test_vals.append(test_val)
-        else:
-            highest_y_E_values.append(np.nan)
-            test_vals.append(np.nan)
+            roots.append(root)
+
+    # Need to display a data frame for Pacther 
+    print_barrier_values(x_P,np.sqrt(2),x_E_values,highest_y_E_values,roots)
+
 
     plt.figure(figsize=(10, 10))
     highest_y_E_values = np.array(highest_y_E_values) # For mirroring
@@ -138,7 +139,10 @@ def create_animation(image_files):
     
     # Save the animation as mp4
     ani.save('Results/barrier_curve_animation.gif', dpi = 300, fps=30)
-
+# Function to display Barrier Values
+def print_barrier_values(x_P,mu,):
+    print(f'Nummerically Solved Barrier for the states xP: {x_P}, mu: {mu}')
+    
 def create_collage(image_files):
     fig, axs = plt.subplots(3, 2, figsize=(22, 17))
     axs = axs.flatten()
@@ -154,13 +158,20 @@ def create_collage(image_files):
 
 # Main function to parallelize the generation of frames
 def main():
-
+    """
+    Please complete the case mu=sqrt(2), x_P=sqrt(2).
+    Please complete the case mu=sqrt(2), x_P=1.1.
+    Please complete the case mu=sqrt(2), x_P=1.45
+    Please complete the case mu=1.1, x_P=1.1.
+    Please complete the case mu=1.1, x_P=1.05.
+    Please complete the case mu=1.1, x_P=3
+    """
     create_frames = True
     if create_frames:
-        x_P_values = np.linspace(1/np.sqrt(2), 1.5, 240)  
-        #x_P_values = np.array([0.8165, 1.0, 1.1, 1.225,np.sqrt(2), 1.45])
+        mu_values = np.array([np.sqrt(2),np.sqrt(2),np.sqrt(2),1.1,1.1,1.1])
+        #x_P_values = np.linspace(1/np.sqrt(2), 1.5, 240)  
+        x_P_values = np.array([np.sqrt(2),1,1,1.45,1.1,1.05,3])
         save_path = "frames"
-        
         if not os.path.exists(save_path):
             os.makedirs(save_path)
 

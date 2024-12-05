@@ -22,22 +22,22 @@ function filter_data(x_vals, y_vals, z_vals,desired_density)
     filtered_z = []
 
     unique_x_vals = unique(x_vals)
-    
-    for x in unique_x_vals
+    num_x_indices = length(unique_x_vals)
+    diff_x = maximum(unique_x_vals)-minimum(unique_x_vals)
+    num_x_steps = Int(floor(num_x_indices/(desired_density*diff_x)))-1
+    new_x_range = [unique_x_vals[i] for i in 1:num_x_steps:length(unique_x_vals)]
+
+    for x in new_x_range
         # Find indices of current x_val
         indices = findall(i -> x_vals[i] == x, eachindex(x_vals))
         current_y_vals = y_vals[indices]
 
         # Calculate min and max of y_vals for the current x_val
-        min_y = minimum(current_y_vals)
-        max_y = maximum(current_y_vals)
-        diff_y = max_y - min_y
+        diff_y = maximum(current_y_vals) -minimum(current_y_vals)
         
-        # Select indices at every 10th of the y-range
+        
         num_y_indices = length(current_y_vals)
         num_steps = Int(floor(num_y_indices/(desired_density*diff_y)))
-        println(num_y_indices)
-        println(num_steps)
         if(num_y_indices!=0&&num_steps!=0)
             selected_indices = [indices[1 + i * num_steps] for i in 0:(Int(floor(num_y_indices/num_steps))-1)]
             # Append the selected values to filtered arrays

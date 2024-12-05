@@ -72,8 +72,8 @@ end
 # Define the range for x_E and y_E
 x_P = 1.1
 
-x_E_range = range(0.0, stop=x_P, length=100)
-y_E_range = range(0.0, stop=1.0, length=100)
+x_E_range = range(0.0, stop=x_P, length=2000)
+y_E_range = range(0.0, stop=1.0, length=1000)
 
 # Prepare data for 3D plotting 
 x_vals = Float64[]
@@ -90,7 +90,7 @@ z_vals = Float64[]
                 push!(y_vals, y_E)
                 push!(z_vals, min_root) # This case the z axis is our root axis (Time to capture)
             else 
-                y_E_range = range(start = 0,stop=y_E,length = 100)
+                y_E_range = range(start = 0,stop=y_E,length = 1000)
                 break
             end
         end
