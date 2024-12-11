@@ -151,7 +151,6 @@ function propagate_capture_check(x_E, y_E, x_P, chi, phi, t, μ)
 end
 
 # Initialize plot
-
 plt = plot(legend = false, size=(1920,1080),template = "plotly_dark")
 
 
@@ -162,7 +161,6 @@ for (x_E, y_E, t) in zip(x_vals, y_vals, z_vals)
     evader_trajectory, pursuer1_trajectory, pursuer2_trajectory = propagate_capture_check(x_E, y_E, x_P, chi, phi, t, μ)
     
     # Plot trajectories 
-    
     scatter!(plt, (x_E,y_E), color=:maroon, alpha = 0.1)
     scatter!(plt, (-x_P,0), color=:darkBlue, alpha = 0.1)
     scatter!(plt, (x_P,0), color=:darkBlue, alpha = 0.1)

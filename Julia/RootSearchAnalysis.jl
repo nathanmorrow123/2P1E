@@ -3,16 +3,14 @@ using Polynomials
 using Serialization
 using Base.Threads: @threads
 
-
-function compute_min_root(x_P::Float64, x_E::Float64, y_E::Float64)
+function compute_min_root(mu::Float64, x_P::Float64, x_E::Float64, y_E::Float64)
     
     # Define coefficients
-    a4 = 1
-    a3 = -4
-    a2 = 2 * (1 - x_E^2 - 3 * y_E^2 + x_P^2)
-    a1 = 4 * (x_E^2 - y_E^2 - x_P^2 + 1)
-    a0 = (x_E^2 + y_E^2 - x_P^2 + 1)^2 + 4 * (x_P^2 - 1) * y_E^2
-
+    a4 = (mu^2-1)^2  # t^4 term
+    a3 = -4 * (mu^2-1)  # t^3 term
+    a2 = 2 * (2 -(mu^2-1) * (x_E^2 + y_E^2 - x_P^2 + 1) - 2*y_E^2)  # t^2 term
+    a1 = 4 * (x_E^2 - y_E^2 - x_P^2 + 1)  # t^1 term
+    a0 = (x_E^2 + y_E^2 - x_P^2 + 1)^2 + 4 * (x_P^2 - 1) * y_E^2  # constant term
 
     p = Polynomial([a0,a1,a2,a3,a4])
     r = roots(p)
@@ -70,8 +68,16 @@ function mirrorData(x_vals,y_vals,z_vals)
 end
 
 # Define the range for x_E and y_E
+"""
+Please complete the case mu=sqrt(2), x_P=sqrt(2).
+Please complete the case mu=sqrt(2), x_P=1.1.
+Please complete the case mu=sqrt(2), x_P=1.45
+Please complete the case mu=1.1, x_P=1.1.
+Please complete the case mu=1.1, x_P=1.05.
+Please complete the case mu=1.1, x_P=3
+"""
 x_P = 1.1
-
+mu = sqrt(2)
 x_E_range = range(0.0, stop=x_P, length=2000)
 y_E_range = range(0.0, stop=1.0, length=1000)
 
@@ -84,7 +90,7 @@ z_vals = Float64[]
 @threads for x_E in reverse(x_E_range)
     for y_E in y_E_range
         if sqrt((x_E - x_P)^2 + y_E^2) >= 1  # Remove points within the capture circle
-            min_root = compute_min_root(x_P, x_E, y_E)
+            min_root = compute_min_root(mu, x_P, x_E, y_E)
             if !isnothing(min_root)
                 push!(x_vals, x_E)
                 push!(y_vals, y_E)
@@ -113,7 +119,6 @@ scatter_points = scatter(
     ),
     type="scatter3d"
 )
-
 
 
 # Find the maximum and minimum values along the z-axis
