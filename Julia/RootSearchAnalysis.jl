@@ -78,8 +78,8 @@ Please complete the case mu=1.1, x_P=3
 """
 x_P = 1.1
 mu = sqrt(2)
-x_E_range = range(0.0, stop=x_P, length=2000)
-y_E_range = range(0.0, stop=1.0, length=1000)
+x_E_range = range(0.0, stop=x_P, length=20000)
+y_E_range = range(0.0, stop=1.0, length=10000)
 
 # Prepare data for 3D plotting 
 x_vals = Float64[]

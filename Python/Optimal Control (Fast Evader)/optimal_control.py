@@ -10,6 +10,7 @@ n_lines = 4
 
 # Initial conditions for reduced state space variables
 x_p0 = np.linspace(np.sqrt((mu**2 - 1) / mu), 1, n_lines, endpoint=False)
+
 z_0 = x_p0
 
 # Terminal conditions for costates
@@ -72,10 +73,11 @@ def add_arrow(line, position=None, direction='right', size=15, color=None):
     color = line.get_color()
     xdata = line.get_xdata()
     ydata = line.get_ydata()
-    
+    ydata = ydata[~np.isnan(ydata)]
+    xdata = xdata[~np.isnan(xdata)]
     if position is None:
         position = ydata.mean()
-    
+    print(ydata)
     # find closest index
     start_ind = int(len(xdata) / 2)
     if direction == 'right':
@@ -94,12 +96,15 @@ def add_arrow(line, position=None, direction='right', size=15, color=None):
 # Plotting the results
 plt.rcParams["font.family"] = "Times New Roman"
 plt.set_cmap('cool')
+
+for i in range(n_lines):
+    line = plt.plot(x_p_arr[:, i], z_arr[:, i])
+    add_arrow(line, position= - -1 , direction='left')
+
 plt.plot(x1, z1, color='black')
 plt.plot(x2, z2, color='black')
 plt.plot(x3, z3, color='black')
-for i in range(n_lines):
-    line = plt.plot(x_p_arr[:, i], z_arr[:, i])
-    add_arrow(line, direction='right')
+
 plt.xticks([0, 1 / np.sqrt(2), 1, 1.454])
 plt.yticks([0, 1 / np.sqrt(2), 1])
 plt.axis('equal')

@@ -13,8 +13,8 @@ def main():
     # Define States 
     mu = 1.1 # Speed ratio, Ve/Vp
     x_P = 1.1
-    x_E = 0.5 
-    y_E = 0.5
+    x_E = 0.05 
+    y_E = 0.2
 
     co.plotCartesianOval(x_P,x_E,y_E,mu)
 
