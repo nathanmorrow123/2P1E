@@ -12,14 +12,27 @@ import quartic_class as qc
 
 
 # Define the various x_P values and mu values
-mu_x_P_cases = [
+"""mu_x_P_cases = [
    #|   mu     |  x_P    |
-   (1.1,              1.5),
-   (1.1,       np.sqrt(2)),
-   (1.1,              1.4),
-   (1.1,              1.1),
-   (1.1,             1.05),
-   (1.1,              0.8)
+   (np.sqrt(2),            np.sqrt(2)),
+   (np.sqrt(2),              1.3),
+   (np.sqrt(2),              1.2),
+   (np.sqrt(2),              1.1),
+   (np.sqrt(2),              1.0),
+   (np.sqrt(2),              0.8)
+]"""
+
+mu_x_P_cases = [
+
+   #|   mu     |  x_P    |
+   (1,            np.sqrt(2)),
+   (1,              1.3),
+   (1,              1.2),
+   (1,              1.1),
+   (1,              1.0),
+   (1,              0.8)
+
+
 ]
 
 def main():

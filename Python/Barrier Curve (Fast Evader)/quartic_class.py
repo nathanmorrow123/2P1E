@@ -93,7 +93,7 @@ def plot_barrier_curve(mu,x_P,x_E_values,highest_y_E_values, mirror_values = Tru
     plt.axvline(0, color='black', linewidth=1)
     plt.xlabel('$x_E$')
     plt.ylabel('$y_E$')
-    plt.title(f'Barrier Curve 2P1E for $\mu$ = {mu}, $x_P$ = {x_P:.4f}')
+    plt.title(f'Barrier Curve 2P1E for $\mu$ = {mu:.4f}, $x_P$ = {x_P:.4f}')
     plt.grid(True)
     plt.gca().set_aspect('equal', adjustable='box')
 

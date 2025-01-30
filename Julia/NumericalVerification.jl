@@ -72,6 +72,7 @@ function initial_headings(x_E, y_E, t, x_P, μ)
     end
 
     println((x_E, y_E, t, x_P, μ))
+
     # Triangle one P1 - Origin - Intercept
     a = x_P  # (Origin to P1)
     b = t + 1  # (P1 to Intercept)
@@ -107,8 +108,8 @@ function initial_headings(x_E, y_E, t, x_P, μ)
 end
 
 # Function to propagate the players in time and store their trajectories
-function propagate_capture_check(x_E, y_E, x_P, chi, phi, t, μ)
-    dt = 0.0001
+function propagate_capture_check(x_E, y_E, x_P, chi, phi, tc, μ)
+    dt = 0.01
     capture_radius = 1.0
 
     # Initial positions
@@ -120,9 +121,10 @@ function propagate_capture_check(x_E, y_E, x_P, chi, phi, t, μ)
     evader_trajectory = [(x_ev, y_ev)]
     pursuer1_trajectory = [(x_p1, y_p1)]
     pursuer2_trajectory = [(x_p2, y_p2)]
-
+    captured_state = Bool[]
+    push!(captured_state, false)
     # Propagate in time
-    for _ in 1:Int(round(t/dt))
+    for i in 1:Int(ceil(tc/dt))
         x_ev += dt * cos(phi)  # Evader moves at speed 1
         y_ev += dt * sin(phi)
 
@@ -140,34 +142,39 @@ function propagate_capture_check(x_E, y_E, x_P, chi, phi, t, μ)
         # Check for capture
         if sqrt((x_p1 - x_ev)^2 + (y_p1 - y_ev)^2) <= capture_radius || sqrt((x_p2 - x_ev)^2 + (y_p2 - y_ev)^2) <= capture_radius
             println("Evader was captured")
-            return evader_trajectory, pursuer1_trajectory, pursuer2_trajectory
+            println("Time elapsed: ",i*dt)
+            push!(captured_state, true)
+            #return evader_trajectory, pursuer1_trajectory, pursuer2_trajectory
+        else
+            push!(captured_state, false)
         end
-    end
 
+    end
+    
     println("Evader was not captured")
     println("Final Distance Between Players: ")
     println((sqrt((x_p1 - x_ev)^2 + (y_p1 - y_ev)^2),sqrt((x_p2 - x_ev)^2 + (y_p2 - y_ev)^2)))
-    return evader_trajectory, pursuer1_trajectory, pursuer2_trajectory
+    return evader_trajectory, pursuer1_trajectory, pursuer2_trajectory, captured_state
 end
 
 # Initialize plot
-plt = plot(legend = false, size=(1920,1080),template = "plotly_dark")
-
+plt = plot(legend = false, aspectmode = :manual, aspectratio = :equal)
 
 # Verify intercept trajectories for all evader positions and plot trajectories
 for (x_E, y_E, t) in zip(x_vals, y_vals, z_vals)
     chi, phi = initial_headings(x_E, y_E, t, x_P, μ) # Chi is Pursuer's heading and Phi is the evader's heading
     
-    evader_trajectory, pursuer1_trajectory, pursuer2_trajectory = propagate_capture_check(x_E, y_E, x_P, chi, phi, t, μ)
+    evader_trajectory, pursuer1_trajectory, pursuer2_trajectory,captured_state = propagate_capture_check(x_E, y_E, x_P, chi, phi, t, μ)
     
     # Plot trajectories 
-    scatter!(plt, (x_E,y_E), color=:maroon, alpha = 0.1)
-    scatter!(plt, (-x_P,0), color=:darkBlue, alpha = 0.1)
-    scatter!(plt, (x_P,0), color=:darkBlue, alpha = 0.1)
-    #quiver([x_E],[y_E],[cos(phi)+x_E],[sin(phi)+y_E])
-    plot!(plt, [p[1] for p in evader_trajectory], [p[2] for p in evader_trajectory], arrow = true, color=:red, linewidth=1,) 
-    plot!(plt, [p[1] for p in pursuer1_trajectory], [p[2] for p in pursuer1_trajectory], arrow = false, color=:blue, linewidth=0.1) 
-    plot!(plt, [p[1] for p in pursuer2_trajectory], [p[2] for p in pursuer2_trajectory], arrow = false, color=:blue, linewidth=0.1)
+    scatter!(plt, (x_E,y_E), color=:maroon, alpha = 1)
+    scatter!(plt, (-x_P,0), color=:darkBlue, alpha = 1)
+    scatter!(plt, (x_P,0), color=:darkBlue, alpha = 1)
+    colorcond(captured_state) = captured_state ? :green : :red
+    plot!(plt, [p[1] for p in evader_trajectory], [p[2] for p in evader_trajectory], color=colorcond.(captured_state), linewidth=1) 
+    plot!(plt, [p[1] for p in pursuer1_trajectory], [p[2] for p in pursuer1_trajectory], color=colorcond.(captured_state), linewidth=.1) 
+    plot!(plt, [p[1] for p in pursuer2_trajectory], [p[2] for p in pursuer2_trajectory], color=colorcond.(captured_state), linewidth=.1)
+
 end
 
 

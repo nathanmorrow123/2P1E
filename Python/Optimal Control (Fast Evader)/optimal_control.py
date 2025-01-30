@@ -98,7 +98,7 @@ plt.rcParams["font.family"] = "Times New Roman"
 plt.set_cmap('cool')
 
 for i in range(n_lines):
-    line = plt.plot(x_p_arr[:, i], z_arr[:, i])
+    line = plt.plot(x_p_arr[:, i], z_arr[:, i], label = f"Optimal trajectory with $x_0$ = {np.round(x_p0[i],4)}")
     add_arrow(line, position= - -1 , direction='left')
 
 plt.plot(x1, z1, color='black')
@@ -110,7 +110,8 @@ plt.yticks([0, 1 / np.sqrt(2), 1])
 plt.axis('equal')
 plt.xlabel('$x_p$')
 plt.ylabel('$z$')
-plt.title('Optimal Control Flow Field')
+plt.title('Optimal Flow Field, $\mu = \sqrt{{2}}$')
 plt.grid()
+plt.legend()
 plt.savefig('Results/Optimal_Control_Flow_Field.pdf')
 plt.show()

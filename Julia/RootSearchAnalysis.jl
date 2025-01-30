@@ -78,8 +78,8 @@ Please complete the case mu=1.1, x_P=3
 """
 x_P = 1.1
 mu = sqrt(2)
-x_E_range = range(0.0, stop=x_P, length=20000)
-y_E_range = range(0.0, stop=1.0, length=10000)
+x_E_range = range(0.0, stop=x_P, length=5000)
+y_E_range = range(0.0, stop=1.0, length=2500)
 
 # Prepare data for 3D plotting 
 x_vals = Float64[]
@@ -223,7 +223,7 @@ cylinder2_mesh = mesh3d(
 )
 
 layout3 = Layout( 
-            template = templates.plotly_dark,  
+            #template = templates.plotly_dark,  
             #width=1920, height=1080,
 			scene = attr(
                     xaxis_title="X",
@@ -232,16 +232,18 @@ layout3 = Layout(
                     title="2P1E Barrier Surface, μ = √2",
                     xaxis_range = [-1,1],
                     yaxis_range = [-1,1],
-                    zaxis_range = [z_Floor,z_Ceil+0.25]),
+                    zaxis_range = [z_Floor,z_Ceil+0.25],
+                    aspectratio = attr(x=1, y=1, z=1),
+                    aspectmode  = "manual" ),
             title_x =0.5,
             titlefont_size="18",
-            #dpi = 300 #For saving the figure 
+            dpi = 300, #For saving the figure 
             #annotations = annotations # For labeling all the minimum and maximum points (Not working)
             )
 
 
 plt = Plot([scatter_points, cylinder1_mesh, cylinder2_mesh],layout3) 
-savefig(plt, "Results/surface_with_capture_circle.pdf")
+#savefig(plt, "Results/surface_with_capture_circle.pdf")
 display(plt) # Display the plot
 
 
