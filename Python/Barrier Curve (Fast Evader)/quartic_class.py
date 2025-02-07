@@ -113,7 +113,7 @@ def create_animation(image_files):
     while None in image_files:
         image_files.remove(None)
     image_files = [x for x in image_files if x is not None] # Remove nones
-    image_files.extend(image_files[::-1]) # Loop start finish together 
+    #image_files.extend(image_files[::-1]) # Loop start finish together 
 
     fig = plt.figure(figsize=(10, 10))
     ax = plt.gca()

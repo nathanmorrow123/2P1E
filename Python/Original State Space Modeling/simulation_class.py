@@ -10,11 +10,12 @@ import os
 # index               0        1         2
 # Control Array: U = [phi,    chi,     psi] : {E,P1,P2} Respectivley
 # Speed Ratio:  mu = VE / VP
-
+# Capture States  {P1_Capture,P2_Capture,P1_Close_To_Capture,P2_Close_To_Capture}
 # Goal of this program is to accuratley implement control laws into a realistic reference frame.
 # Specifically for the 2P1E Fast Evader with Capture Region scenario.
 
-def ref_to_realistic(rot,trans,x_P,x_E,y_E,phi,chi,psi):
+
+def reduced_to_realistic(rot,trans,x_P,x_E,y_E,phi,chi,psi):
     
     # Origin to Origin Reverse Translation
     tempE = np.array([x_E,y_E]) - trans
@@ -35,7 +36,7 @@ def ref_to_realistic(rot,trans,x_P,x_E,y_E,phi,chi,psi):
 
     return xE, yE, xP1, yP1, xP2, yP2, phi, chi, psi
 
-def realistic_to_ref(xE, yE, xP1, yP1, xP2, yP2,phi,chi,psi):
+def realistic_to_reduced(xE, yE, xP1, yP1, xP2, yP2,phi,chi,psi):
 
     # Axis Rotation
     rot = - np.arctan2(yP1-yP2,xP1-xP2)
@@ -57,7 +58,6 @@ def realistic_to_ref(xE, yE, xP1, yP1, xP2, yP2,phi,chi,psi):
     tempP2 += trans
     x_P = tempP1[0]
     x_E,y_E = tempE
-    print(tempE,tempP1,tempP2)
     return rot,trans,x_P,x_E,y_E,phi,chi,psi
 
 def compute_sec_min_root(mu, x_P, x_E, y_E):
@@ -75,20 +75,17 @@ def compute_sec_min_root(mu, x_P, x_E, y_E):
     coeffs = [a0,a1,a2,a3,a4] 
     roots = np.polynomial.Polynomial(coeffs).roots()
     real_roots = [r for r in roots if np.isreal(r) and np.real(r) >= 0 and np.imag(r) == 0]
-    print(real_roots)
     if len(real_roots) == 0:
         return None
     elif len(real_roots) == 1:
         return None
     elif len(real_roots) == 2:
         t_c = sorted(np.real(real_roots))[1]
-        print(t_c)
         return t_c
     elif len(real_roots) == 3:
         return None
     elif len(real_roots) == 4:
         t_c = sorted(np.real(real_roots))[1]
-        print(t_c)
         return t_c
     else:
         return None
@@ -103,14 +100,7 @@ def compute_quartic_headings(t,mu,x_P,x_E,y_E):
     print(t,mu,x_P,x_E,y_E)
 
     # Triangle one P1 - Origin - Intercept
-    a = x_P  # (Origin to P1)
-    b = t + 1  # (P1 to Intercept)
-    c = abs(y)  # (Origin to Intercept)
-
-    chi = np.arccos((a**2 + b**2 - c**2) / (2 * a * b))
-    chi = np.pi - chi
-    if y < 0:
-        chi = -chi
+    chi = np.arctan2(y,-x_P)
 
     # Triangle two Evader - EvaderYaxisProj - Intercept
     if np.isclose(x_E,0):
@@ -119,24 +109,22 @@ def compute_quartic_headings(t,mu,x_P,x_E,y_E):
         else:
             phi = -np.pi / 2
     else:
-        a_ev = x_E  # (Y axis to Evader)
-        b_ev = mu * t  # (Evader to Intercept)
-        c_ev = abs(y - y_E)  # (EvaderYaxisProj to Intercept)
+        phi = np.arctan2(y-y_E,-x_E)
 
-        phi = np.arccos((a_ev**2 + b_ev**2 - c_ev**2) / (2 * a_ev * b_ev))
-        if y < 0 :
-            phi = -phi
     psi = np.pi -chi 
 
     return phi,chi,psi
-    
+
 class PursuitSimulation:
-    def __init__(self, speed_ratio, E_initial, p1_initial, p2_initial):
+    def __init__(self, speed_ratio, E_initial, p1_initial, p2_initial, control = "surf", continue_after_capture = False):
         self.mu = speed_ratio
         self.X = np.array([*E_initial,*p1_initial, *p2_initial])
         self.t = 0.0
         self.U = np.array([np.pi/2, np.pi/2, np.pi/2])
-        self.capture_states = [False, False]
+        self.MoE = 1e-2
+        self.control = control
+        self.CaC = continue_after_capture
+        self.capture_states = [False, False,False,False]
         self.capture_buffer_counter = 0
         self.trail_length = 10
         self.pursuer_trails = [[], []]
@@ -146,7 +134,7 @@ class PursuitSimulation:
         self.init_players()
     
     def init_plot(self):
-        plt.style.use('dark_background')
+        #plt.style.use('dark_background')
         plt.rcParams["font.family"] = "Times New Roman"
         self.fig, self.ax = plt.subplots()
         self.ax.set_xlim(-5, 5)
@@ -157,8 +145,8 @@ class PursuitSimulation:
 
     def init_players(self):
         xE, yE, xP1, yP1, xP2, yP2 = self.X
-        self.pursuers, = self.ax.plot([], [], 'bo', markersize=10, alpha=0.5)
-        self.evader, = self.ax.plot([], [], 'ro', markersize=10, alpha=0.5)
+        self.pursuers, = self.ax.plot([], [], 'bo', markersize=5, alpha=1)
+        self.evader, = self.ax.plot([], [], 'ro', markersize=5, alpha=1)
         self.capture_circles = [
             Circle((xP1, yP1), 1, linestyle='--', linewidth=1, edgecolor='darkblue', facecolor='none'),
             Circle((xP2, yP2), 1, linestyle='--', linewidth=1, edgecolor='darkblue', facecolor='none')
@@ -173,7 +161,7 @@ class PursuitSimulation:
         data_range = max(x_max - x_min, y_max - y_min)
         self.ax.set_xlim((x_min, x_min + data_range))
         self.ax.set_ylim((y_min, y_min + data_range))
-        plt.title(f'Two Cutters and Fugitive Ship Problem, Time: {np.round(self.t,4)}')
+        plt.title(f'Two Cutters and Fugitive Ship Problem, Time: {self.t:.2f}')
 
     def no_contact_pure_pursuit_control(self):
         xE, yE, xP1, yP1, xP2, yP2 = self.X
@@ -183,19 +171,55 @@ class PursuitSimulation:
         psi = np.arctan2(yE - yP2, xE - xP2)  # P2 pursues evader
         
         self.U = np.array([phi, chi, psi])
+        
+        print("no_contact_PP")
     
-        """    def optimal_contract(self):
+    def contact_sub_optimal(self):
         phi,chi,psi = self.U
         xE, yE, xP1, yP1, xP2, yP2 = self.X
-        chi = np.arccos(np.sqrt(xE))
-        """
+        rot,trans,x_P,x_E,y_E,phi,chi,psi = realistic_to_reduced(xE, yE, xP1, yP1, xP2, yP2,phi,chi,psi)
+        
+        # P1 engages in "Pure Pursuit"
+        chi = np.arctan2(y_E,-(x_P-x_E))
+        
+        # E Surfs P1
+        alpha = np.arccos((1-self.MoE)/self.mu)
+        phi = chi - alpha
+        
+        # P2 Mirrors
+        psi = np.pi - chi
+        
+        xE, yE, xP1, yP1, xP2, yP2,phi,chi,psi = reduced_to_realistic(rot,trans,x_P,x_E,y_E,phi,chi,psi)
 
-    def crash_course_control(self):
+        self.U = np.array([phi,chi,psi])
+        
+        print("contact_sub_optimal")
+
+    def contact_optimal(self):
+        phi,chi,psi = self.U
+        xE, yE, xP1, yP1, xP2, yP2 = self.X
+        rot,trans,x_P,x_E,y_E,phi,chi,psi = realistic_to_reduced(xE, yE, xP1, yP1, xP2, yP2,phi,chi,psi)
+        
+        # P1 engages in "Pure Pursuit"
+        chi = np.arctan2(y_E,-(x_P-x_E))
+        
+        
+
+        # E Surfs P1
+        alpha = np.arccos((1-self.MoE)/self.mu)
+        phi = chi - alpha
+
+        xE, yE, xP1, yP1, xP2, yP2,phi,chi,psi = reduced_to_realistic(rot,trans,x_P,x_E,y_E,phi,chi,psi)
+
+        self.U = np.array([phi,chi,psi])
+        print("contact_optimal")
+        
+    def collision_course_control(self):
         xE, yE, xP1, yP1, xP2, yP2 = self.X
         phi,chi,psi = self.U
         mu = self.mu
 
-        rot,trans, x_P,x_E,y_E,phi,chi,psi = realistic_to_ref(xE, yE, xP1, yP1, xP2, yP2,phi,chi,psi)
+        rot,trans, x_P,x_E,y_E,phi,chi,psi = realistic_to_reduced(xE, yE, xP1, yP1, xP2, yP2,phi,chi,psi)
         
         t_c = compute_sec_min_root(mu, x_P, x_E, y_E)
 
@@ -207,21 +231,32 @@ class PursuitSimulation:
             print("Capture is not achievable switching to pure pursuit!")
             return
         
-        xE, yE, xP1, yP1, xP2, yP2,phi,chi,psi = ref_to_realistic(rot,trans, x_P,x_E,y_E,phi,chi,psi)
+        xE, yE, xP1, yP1, xP2, yP2,phi,chi,psi = reduced_to_realistic(rot,trans, x_P,x_E,y_E,phi,chi,psi)
         self.X = xE, yE, xP1, yP1, xP2, yP2
         phi -= rot
         chi -= rot
         psi -= rot
         self.U = np.array([phi, chi, psi])
-    
-    def propagate_players(self, control_method="pure_pursuit"):
-        if control_method == "pure_pursuit":
-            self.no_contact_pure_pursuit_control()
-        elif control_method == "crash_course":
-            self.crash_course_control()
         
+        print("no_contact_CC")
+    
+    def propagate_players(self):
+        
+        if self.control == "surf":
+            if ( self.capture_states[2] or self.capture_states[3]):
+                self.contact_sub_optimal()
+            else:
+                self.collision_course_control()
+        elif self.control == "collision_course":
+            self.collision_course_control()
+        elif self.control == "pure_pursuit":
+            self.no_contact_pure_pursuit_control
+        else:
+            print("Invalid Control Strategy, Switching to Surf")
+            self.control = "surf"
+
         phi, chi, psi = self.U
-        vE, vP, dt = self.mu, 1.0, 0.01
+        vE, vP, dt = self.mu, 1.0, .01
         self.X = np.array(self.X)
 
         self.X[0:2] += (vE * dt) * np.array([np.cos(phi), np.sin(phi)])  # Evader Motion
@@ -240,7 +275,8 @@ class PursuitSimulation:
             self.pursuer_trails[1].pop(0)
 
     def checkCapture(self):
-        P1_Capture_State,P2_Capture_State = self.capture_states
+        P1_Capture_State,P2_Capture_State,P1_Close_To_Capture,P2_Close_To_Capture = self.capture_states
+        
         xE, yE, xP1, yP1, xP2, yP2 = self.X
         if (np.sqrt((xE-xP1)**2+(yE-yP1)**2)<1):
             P1_Capture_State = True
@@ -250,7 +286,15 @@ class PursuitSimulation:
             P2_Capture_State = True
         else:
             P2_Capture_State = False
-        self.capture_states = [P1_Capture_State,P2_Capture_State]
+
+        if (np.sqrt((xE-xP1)**2+(yE-yP1)**2)<1 + self.MoE):
+            P1_Close_To_Capture = True
+            print("Close To Capture!")
+        if (np.sqrt((xE-xP2)**2+(yE-yP2)**2)<1 + self.MoE):
+            P2_Close_To_Capture = True
+            print("Close To Capture!")
+        
+        self.capture_states = [P1_Capture_State,P2_Capture_State,P1_Close_To_Capture,P2_Close_To_Capture]
         
     def update(self, frame):
         
@@ -269,17 +313,21 @@ class PursuitSimulation:
             evader_x, evader_y = zip(*self.evader_trail)
             self.ax.plot(evader_x, evader_y, 'r-', alpha=0.2)
         
-        if any(self.capture_states):
+        if (self.capture_states[0] or self.capture_states[1]):
             print("captured")
             self.capture_buffer_counter += 1
+            if not(self.capture_states[0] and self.capture_states[1]): # Only continue after capture if evader isn't captured by both 
+                if self.CaC: # Continue after Capture setting
+                    self.propagate_players()
+                    self.checkCapture()
+                    self.update_plot_limits()
             return [self.pursuers, self.evader] + self.capture_circles
         else:
-            self.propagate_players("crash_course")
+            self.propagate_players()
             self.checkCapture()
             self.update_plot_limits()
             return [self.pursuers, self.evader] + self.capture_circles
-        
-    
+            
     def run_simulation(self):
         if not os.path.exists("Results"):
             os.makedirs("Results")

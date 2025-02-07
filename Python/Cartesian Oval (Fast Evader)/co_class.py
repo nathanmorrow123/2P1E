@@ -16,7 +16,7 @@ def getCartesianOvalData(x_P,x_E,y_E,mu):
         t_max_true = numerator/denominator
 
         # Generate parameter t
-        t = np.linspace(t_min, t_max_true, 100000, endpoint=True)
+        t = np.linspace(t_min, t_max_true, 50000, endpoint=True)
 
         # Parametric equations
         x1 = [x_P+((mu**2-1)*t**2-2*t-(x_P-x_E)**2-1)/(2*(x_P-x_E)),x_P+((mu**2-1)*t**2-2*t-(x_P-x_E)**2-1)/(2*(x_P-x_E))]
@@ -37,7 +37,7 @@ def getCartesianOvalData(x_P,x_E,y_E,mu):
         # Generate parameter t
         t_min = (d1-1)/(mu+1)
         t_max = (d1+1)/(mu-1)
-        t = np.linspace(t_min, t_max, 100000, endpoint=True)
+        t = np.linspace(t_min, t_max, 50000, endpoint=True)
         x1 = [((mu**2-1)*t**2-2*t-(d1-1)**2)/(2*d1),((mu**2-1)*t**2-2*t-(d1-1)**2)/(2*d1)]
         y1 = [np.sqrt((t+1)**2-(((mu**2-1)*t**2-2*t-d1**2-1)/(2*d1))**2),-np.sqrt((t+1)**2-(((mu**2-1)*t**2-2*t-d1**2-1)/(2*d1))**2)] # Two values for y a positive and a neqative sqrt
 
@@ -62,7 +62,7 @@ def getCartesianOvalData(x_P,x_E,y_E,mu):
         # Generate parameter t
         t_min = (d2-1)/(mu+1)
         t_max = (d2+1)/(mu-1)
-        t = np.linspace(t_min, t_max, 100000, endpoint=True)
+        t = np.linspace(t_min, t_max, 50000, endpoint=True)
         x2 = [-((mu**2-1)*t**2-2*t-(d2-1)**2)/(2*d2),-((mu**2-1)*t**2-2*t-(d2-1)**2)/(2*d2)]
         y2 = [np.sqrt((t+1)**2-(((mu**2-1)*t**2-2*t-d2**2-1)/(2*d2))**2),-np.sqrt((t+1)**2-(((mu**2-1)*t**2-2*t-d2**2-1)/(2*d2))**2)] # Two values for y a positive and a neqative sqrt
 
@@ -89,7 +89,7 @@ def plotCartesianOval(x_P,x_E,y_E,mu):
 
     ## Plot the Cartesian oval
     # Set Figure Size
-    plt.figure(figsize=(6, 4))
+    plt.figure(figsize=(4, 4))
     # Set the aspect of the plot to be equal
     
     #plt.style.use('dark_background')
@@ -103,14 +103,16 @@ def plotCartesianOval(x_P,x_E,y_E,mu):
     plt.plot(-x_P, 0, '.', label='(Pursuer 2)')
     plt.plot(x_E, y_E,  '.', label ='(Evader)')
     
-    plt.gca().set_aspect('equal', adjustable='box')
+    #plt.gca().set_aspect('equal', adjustable='box')
     # Labels and title
+    plt.xlim([-2.5,2.5])
+    plt.ylim([-5,5])
     plt.xlabel(rf"$x_E$")
     plt.ylabel(rf"$y_E$")
     plt.title(rf"2P1E Cartesian $\textit{{oval}},\mu = {mu:.4} $")
-    plt.legend()
+    plt.legend(loc = "lower right")
     plt.grid(True, alpha = 0.3)
     plt.set_cmap('hot')
-    plt.savefig(rf'Results/CO_2P1E_mu_{mu:.4}_x_P_{x_P:.4}_x_E_{x_E:.4}_y_E_{y_E:.4}.png',dpi=600)
+    plt.savefig(rf'Results/Zoomed_CO_2P1E_mu_{mu:.4}_x_P_{x_P:.4}_x_E_{x_E:.4}_y_E_{y_E:.4}.png',dpi=300)
 
 
