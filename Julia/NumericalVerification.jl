@@ -1,6 +1,7 @@
 using LinearAlgebra
 using Plots
 using Serialization
+using LaTeXStrings
 plotly()
 
 # Load the surface data from the binary file
@@ -71,39 +72,13 @@ function initial_headings(x_E, y_E, t, x_P, μ)
         y = (x_E^2 + y_E^2 - x_P^2 + 1 + 2 * t - (μ^2 - 1) * t^2) / (2 * y_E)
     end
 
-    println((x_E, y_E, t, x_P, μ))
+    #println((x_E, y_E, t, x_P, μ))
 
     # Triangle one P1 - Origin - Intercept
-    a = x_P  # (Origin to P1)
-    b = t + 1  # (P1 to Intercept)
-    c = abs(y)  # (Origin to Intercept)
-
-    chi = acos((a^2 + b^2 - c^2) / (2 * a * b))
-    chi = pi - chi
-    if y < 0
-        chi = -chi
-    end
-
+    chi = pi - atan(y,x_P)
     # Triangle two Evader - EvaderYaxisProj - Intercept
-    if x_E == 0
-        if y > 0
-            phi = π / 2
-        else
-            phi = -π / 2
-        end
-    else
+    phi = atan(y-y_E,x_E)
 
-        a_ev = x_E  # (Y axis to Evader)
-        b_ev = μ * t  # (Evader to Intercept)
-        c_ev = abs(y - y_E)  # (EvaderYaxisProj to Intercept)
-
-        phi = acos((a_ev^2 + b_ev^2 - c_ev^2) / (2 * a_ev * b_ev))
-        if y < 0 
-            phi = -phi
-        end
-
-    end
-    
     return chi, phi
 end
 
@@ -141,8 +116,8 @@ function propagate_capture_check(x_E, y_E, x_P, chi, phi, tc, μ)
 
         # Check for capture
         if sqrt((x_p1 - x_ev)^2 + (y_p1 - y_ev)^2) <= capture_radius || sqrt((x_p2 - x_ev)^2 + (y_p2 - y_ev)^2) <= capture_radius
-            println("Evader was captured")
-            println("Time elapsed: ",i*dt)
+            #println("Evader was captured")
+            #println("Time elapsed: ",i*dt)
             push!(captured_state, true)
             #return evader_trajectory, pursuer1_trajectory, pursuer2_trajectory
         else
@@ -151,14 +126,14 @@ function propagate_capture_check(x_E, y_E, x_P, chi, phi, tc, μ)
 
     end
     
-    println("Evader was not captured")
-    println("Final Distance Between Players: ")
-    println((sqrt((x_p1 - x_ev)^2 + (y_p1 - y_ev)^2),sqrt((x_p2 - x_ev)^2 + (y_p2 - y_ev)^2)))
+    #println("Evader was not captured")
+    #println("Final Distance Between Players: ")
+    #println((sqrt((x_p1 - x_ev)^2 + (y_p1 - y_ev)^2),sqrt((x_p2 - x_ev)^2 + (y_p2 - y_ev)^2)))
     return evader_trajectory, pursuer1_trajectory, pursuer2_trajectory, captured_state
 end
 
 # Initialize plot
-plt = plot(legend = false, aspectmode = :manual, aspectratio = :equal)
+plt = plot(legend = false, xlabel="X", ylabel="Y", aspectmode = :manual, aspectratio = :equal)
 
 # Verify intercept trajectories for all evader positions and plot trajectories
 for (x_E, y_E, t) in zip(x_vals, y_vals, z_vals)
@@ -167,13 +142,13 @@ for (x_E, y_E, t) in zip(x_vals, y_vals, z_vals)
     evader_trajectory, pursuer1_trajectory, pursuer2_trajectory,captured_state = propagate_capture_check(x_E, y_E, x_P, chi, phi, t, μ)
     
     # Plot trajectories 
-    scatter!(plt, (x_E,y_E), color=:maroon, alpha = 1)
-    scatter!(plt, (-x_P,0), color=:darkBlue, alpha = 1)
-    scatter!(plt, (x_P,0), color=:darkBlue, alpha = 1)
+    scatter!(plt, (x_E,y_E), color=:red, alpha = .1)
+    scatter!(plt, (-x_P,0), color=:blue, alpha = .1)
+    scatter!(plt, (x_P,0), color=:blue, alpha = .1)
     colorcond(captured_state) = captured_state ? :green : :red
     plot!(plt, [p[1] for p in evader_trajectory], [p[2] for p in evader_trajectory], color=colorcond.(captured_state), linewidth=1) 
-    plot!(plt, [p[1] for p in pursuer1_trajectory], [p[2] for p in pursuer1_trajectory], color=colorcond.(captured_state), linewidth=.1) 
-    plot!(plt, [p[1] for p in pursuer2_trajectory], [p[2] for p in pursuer2_trajectory], color=colorcond.(captured_state), linewidth=.1)
+    plot!(plt, [p[1] for p in pursuer1_trajectory], [p[2] for p in pursuer1_trajectory], color=:blue, linewidth=.1) 
+    plot!(plt, [p[1] for p in pursuer2_trajectory], [p[2] for p in pursuer2_trajectory], color=:blue, linewidth=.1)
 
 end
 

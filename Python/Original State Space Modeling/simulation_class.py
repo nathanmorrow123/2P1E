@@ -164,6 +164,7 @@ class PursuitSimulation:
         plt.title(f'Two Cutters and Fugitive Ship Problem, Time: {self.t:.2f}')
 
     def no_contact_pure_pursuit_control(self):
+        
         xE, yE, xP1, yP1, xP2, yP2 = self.X
         
         phi = np.pi/2  # Evader moves straight for now (NOT CORRECT)
@@ -241,7 +242,6 @@ class PursuitSimulation:
         print("no_contact_CC")
     
     def propagate_players(self):
-        
         if self.control == "surf":
             if ( self.capture_states[2] or self.capture_states[3]):
                 self.contact_sub_optimal()
@@ -250,7 +250,7 @@ class PursuitSimulation:
         elif self.control == "collision_course":
             self.collision_course_control()
         elif self.control == "pure_pursuit":
-            self.no_contact_pure_pursuit_control
+            self.no_contact_pure_pursuit_control()
         else:
             print("Invalid Control Strategy, Switching to Surf")
             self.control = "surf"
@@ -297,7 +297,6 @@ class PursuitSimulation:
         self.capture_states = [P1_Capture_State,P2_Capture_State,P1_Close_To_Capture,P2_Close_To_Capture]
         
     def update(self, frame):
-        
         self.pursuers.set_data(self.X[2::2], self.X[3::2])
         self.evader.set_data(self.X[0], self.X[1])
         
@@ -332,10 +331,10 @@ class PursuitSimulation:
         if not os.path.exists("Results"):
             os.makedirs("Results")
         
-        self.ani = animation.FuncAnimation(self.fig, self.update, frames=250, blit=True)
+        self.ani = animation.FuncAnimation(self.fig, self.update, frames=250, blit=False)
         print("Saving animation as a GIF...")
         self.ani.save('Results/pursuers_and_fugitive.gif', writer='pillow', fps=30)
-        
+        plt.savefig('last_frame.png', dpi = 300)
 
 
 
